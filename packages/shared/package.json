@@ -1,0 +1,17 @@
+{
+  "name": "@3d-textbook/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "웹과 API가 함께 쓰는 요청·응답 스키마와 타입",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

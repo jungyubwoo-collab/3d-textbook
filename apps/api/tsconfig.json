@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "lib": ["ES2024"],
+    "types": ["node"]
+  },
+  "include": ["src", "prisma", "prisma.config.ts", "vitest.config.ts"]
+}

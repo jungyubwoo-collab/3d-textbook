@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic',
+    'Noto Sans KR', system-ui, sans-serif;
+  --color-paper: #f7f2e7;
+  --color-ink: #25221e;
+  --color-muted: #6f655a;
+  --color-accent: #c4522f;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #d9cfbf;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+canvas {
+  touch-action: none;
+}

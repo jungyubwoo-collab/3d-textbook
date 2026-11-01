@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+*.log
+
+# 환경 변수 (예시 파일만 커밋)
+.env
+.env.*
+!.env.example
+
+# Prisma가 생성하는 클라이언트 (npm install 때 다시 생성됨)
+apps/api/src/generated/
+
+# 에디터·OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

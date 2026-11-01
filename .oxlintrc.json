@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "oxc", "unicorn", "import", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    // React 17+ 자동 JSX 런타임에서는 React를 import하지 않아도 된다.
+    "react/react-in-jsx-scope": "off",
+    // 반환 타입은 TypeScript가 검사한다(switch 전수 검사, useEffect 정리 함수 등에서 오탐).
+    "typescript/consistent-return": "off",
+    "import/no-unassigned-import": [
+      "warn",
+      { "allow": ["**/*.css", "@testing-library/jest-dom/vitest"] }
+    ],
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    // Express 5는 async 핸들러에서 던진 오류를 오류 처리 미들웨어로 넘겨 준다(Express 4 기준 규칙).
+    "oxc/no-async-endpoint-handlers": "off",
+    // Prisma API(_count, _all 등)가 밑줄 이름을 쓴다.
+    "no-underscore-dangle": "off",
+    "vitest/require-mock-type-parameters": "off",
+    "vitest/expect-expect": ["error", { "assertFunctionNames": ["expect", "request.**.expect"] }]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        // 테스트에서는 가짜 객체를 실제 타입으로 단언하는 일이 흔하다.
+        "typescript/no-unsafe-type-assertion": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["**/dist/**", "**/coverage/**", "apps/api/src/generated/**"]
+}

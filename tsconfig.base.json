@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "es2023",
+    "skipLibCheck": true,
+    "noEmit": true,
+
+    /* 모듈: Node(타입 제거 실행)와 Vite 모두 .ts 확장자 import를 그대로 쓴다 */
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "moduleDetection": "force",
+    "resolveJsonModule": true,
+
+    /* 검사 (strict는 TypeScript 6부터 기본값) */
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "3d-textbook",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.22"
+  },
+  "scripts": {
+    "dev": "concurrently --names api,web --prefix-colors blue,magenta \"npm run dev -w @3d-textbook/api\" \"npm run dev -w @3d-textbook/web\"",
+    "dev:web": "npm run dev -w @3d-textbook/web",
+    "dev:api": "npm run dev -w @3d-textbook/api",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run db:migrate -w @3d-textbook/api --",
+    "db:deploy": "npm run db:deploy -w @3d-textbook/api",
+    "db:studio": "npm run db:studio -w @3d-textbook/api"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
+    "prettier": "^3.9.10",
+    "typescript": "~7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "allowScripts": {
+    "prisma": true,
+    "@prisma/engines": true
+  }
+}

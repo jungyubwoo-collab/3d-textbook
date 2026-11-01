@@ -1,0 +1,22 @@
+# 로컬 개발용 PostgreSQL. `npm run db:up`으로 띄우고 `npm run db:down`으로 내린다.
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: textbook
+      POSTGRES_PASSWORD: textbook
+      POSTGRES_DB: textbook
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      # PostgreSQL 18 이미지부터는 /var/lib/postgresql 에 마운트한다.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U textbook -d textbook']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  db-data:

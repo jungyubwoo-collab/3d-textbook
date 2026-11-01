@@ -1,0 +1,31 @@
+// 데이터 모델. 고친 뒤에는 `npm run db:migrate`로 마이그레이션을 만들고 적용한다.
+// 교과서 내용(단원·문항)은 DB가 아니라 apps/web/src/content 의 코드로 관리한다.
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  // Node가 TypeScript를 그대로 실행하므로 생성 코드도 .ts 확장자로 import 한다.
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// 학생이 덮개를 열기 전에 고른 예측. 학생 한 명당 문항마다 첫 예측만 남긴다.
+model Prediction {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  learnerId  String   @map("learner_id") @db.Uuid
+  lessonId   String   @map("lesson_id")
+  questionId String   @map("question_id")
+  choiceId   String   @map("choice_id")
+  isCorrect  Boolean  @map("is_correct")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([learnerId, lessonId, questionId])
+  @@index([lessonId, questionId])
+  @@map("predictions")
+}
