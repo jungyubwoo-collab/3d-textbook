@@ -335,57 +335,90 @@ function paintBackground(
   ctx.fillRect(0, 0, width, height);
 }
 
-/** 앞표지의 선 그림: 받침점 위의 지레 */
+/** 앞표지의 선 그림: 뉴턴의 대포. 산 위에서 쏜 대포알이 떨어지다가, 충분히 빠르면 지구를 돈다. */
 function drawCoverIllustration(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   size: number,
 ): void {
+  const radius = size * 0.32;
+  const launch = radius + 46;
+  const at = (angle: number, distance: number): [number, number] => [
+    cx + distance * Math.sin(angle),
+    cy - distance * Math.cos(angle),
+  ];
   ctx.save();
-  ctx.strokeStyle = COLORS.ivory;
-  ctx.fillStyle = COLORS.ivory;
-  ctx.lineWidth = 4;
-  ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
-  const half = size / 2;
+  ctx.lineJoin = 'round';
+
+  // 지구와 위도·경도선
+  ctx.strokeStyle = COLORS.ivory;
+  ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.moveTo(cx - 60, cy + 130);
-  ctx.lineTo(cx + 60, cy + 130);
-  ctx.lineTo(cx, cy + 10);
-  ctx.closePath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(-0.08);
-  ctx.strokeRect(-half, -10, size, 20);
-  for (let i = -4; i <= 4; i++) {
-    if (i === 0) continue;
+  ctx.globalAlpha = 0.45;
+  ctx.lineWidth = 1.8;
+  for (const k of [-0.5, 0, 0.5]) {
     ctx.beginPath();
-    ctx.moveTo((i * half) / 4.6, -10);
-    ctx.lineTo((i * half) / 4.6, 2);
+    ctx.ellipse(
+      cx,
+      cy + k * radius,
+      radius * Math.sqrt(1 - k * k),
+      radius * 0.13,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.stroke();
   }
-  const hang = (x: number, count: number, color: string) => {
-    ctx.strokeStyle = COLORS.ivory;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, radius * 0.42, radius, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // 대포알이 지나간 길: 떨어지는 두 길과 한 바퀴 도는 궤도
+  ctx.strokeStyle = COLORS.gold;
+  ctx.lineWidth = 3.2;
+  ctx.setLineDash([11, 10]);
+  for (const end of [0.42, 1.25]) {
     ctx.beginPath();
-    ctx.moveTo(x, 10);
-    ctx.lineTo(x, 50);
-    ctx.stroke();
-    for (let k = 0; k < count; k++) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(x - 26, 50 + k * 44, 52, 38, 8);
-      ctx.fill();
-      ctx.stroke();
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      const [x, y] = at(t * end, launch - (launch - radius) * t * t);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
-  };
-  ctx.restore();
-  ctx.save();
-  ctx.translate(cx, cy);
-  hang(-half * 0.45, 2, 'rgba(244, 234, 210, 0.25)');
-  hang(half * 0.86, 1, COLORS.gold);
-  ctx.restore();
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, launch, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 산과 대포
+  ctx.fillStyle = COLORS.cloth;
+  ctx.strokeStyle = COLORS.ivory;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(cx - 40, cy - radius + 14);
+  ctx.lineTo(cx - 4, cy - launch + 8);
+  ctx.lineTo(cx + 40, cy - radius + 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = COLORS.ivory;
+  ctx.beginPath();
+  ctx.roundRect(cx - 6, cy - launch - 4, 30, 12, 5);
+  ctx.fill();
+
+  // 궤도를 도는 대포알
+  const [bx, by] = at(2.2, launch);
+  ctx.fillStyle = COLORS.gold;
+  ctx.beginPath();
+  ctx.arc(bx, by, 11, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 

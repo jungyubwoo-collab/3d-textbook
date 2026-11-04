@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { pagesOfSpread } from '../book/structure.ts';
 import type { BookDefinition, PageBlock } from '../book/types.ts';
+import { CAPTURE } from '../lib/capture.ts';
 import { bookStore, useBookStore } from '../state/bookStore.ts';
 import { Toolbar } from './Toolbar.tsx';
 
@@ -26,7 +27,8 @@ export function Hud({ book }: { book: BookDefinition }) {
 function ToastMessage() {
   const toast = useBookStore((state) => state.toast);
   useEffect(() => {
-    if (!toast) return;
+    // 영상 녹화 중에는 녹화 스크립트가 화면 시간에 맞춰 직접 닫는다.
+    if (!toast || CAPTURE) return;
     const timer = setTimeout(() => bookStore.getState().dismissToast(toast.id), 3200);
     return () => clearTimeout(timer);
   }, [toast]);
@@ -67,7 +69,10 @@ function blockToText(block: PageBlock): string[] {
         `예측 문항: ${block.question.prompt}`,
         ...block.question.choices.map((choice, index) => `${index + 1}. ${choice.label}`),
       ];
+    case 'table':
+      return block.rows.map(([label, value]) => `${label}: ${value}`);
     case 'lines':
+    case 'grid':
     case 'spacer':
       return [];
   }

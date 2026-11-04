@@ -73,3 +73,20 @@ export function easeOutBack(t: number): number {
   const c3 = c1 + 1;
   return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2;
 }
+
+/**
+ * 넘기는 동안 종이가 휘는 곳이 바깥 끝에서 책등 쪽으로 굴러가도록,
+ * 뼈마디마다 휨을 나눠 줄 비율(합 = 1)을 구한다. phase: 넘김 진행(0 → 1)
+ */
+export function curlWeights(count: number, phase: number, out: number[] = []): number[] {
+  const center = 1 - 0.62 * phase;
+  let sum = 0;
+  for (let j = 0; j < count; j++) {
+    const t = (j + 1) / count;
+    const weight = Math.exp(-((t - center) ** 2) / 0.09) + 0.15;
+    out[j] = weight;
+    sum += weight;
+  }
+  for (let j = 0; j < count; j++) out[j] = out[j]! / sum;
+  return out;
+}

@@ -28,6 +28,10 @@ export interface BookState {
   toast: Toast | null;
   /** 바뀔 때마다 카메라가 기본 시점으로 돌아간다. */
   viewResetCount: number;
+  /** 책장을 손으로 끌어 넘기는 중인지 (그동안 카메라를 움직이지 않는다) */
+  dragging: boolean;
+  /** 책장 넘기는 소리 등 효과음을 껐는지 */
+  muted: boolean;
 
   configure: (spreadCount: number) => void;
   goTo: (spread: number) => void;
@@ -42,6 +46,8 @@ export interface BookState {
   showToast: (message: string) => void;
   dismissToast: (id: number) => void;
   resetView: () => void;
+  setDragging: (dragging: boolean) => void;
+  toggleMuted: () => void;
 }
 
 export const answerKey = (lessonId: string, questionId: string): string =>
@@ -57,6 +63,8 @@ export const bookStore = createStore<BookState>()(
       spreadCount: 1,
       settled: true,
       restingSpread: 0,
+      dragging: false,
+      muted: false,
       answers: {},
       toast: null,
       viewResetCount: 0,
@@ -100,12 +108,15 @@ export const bookStore = createStore<BookState>()(
         if (get().toast?.id === id) set({ toast: null });
       },
       resetView: () => set((state) => ({ viewResetCount: state.viewResetCount + 1 })),
+      setDragging: (dragging) => set({ dragging }),
+      toggleMuted: () => set((state) => ({ muted: !state.muted })),
     }),
     {
       name: '3d-textbook:progress',
       version: 1,
-      // 학습 기록만 브라우저에 남긴다.
+      // 학습 기록과 소리 설정만 브라우저에 남긴다.
       partialize: (state) => ({
+        muted: state.muted,
         answers: Object.fromEntries(
           Object.entries(state.answers).map(([key, { choiceId, revealed, correct }]) => [
             key,

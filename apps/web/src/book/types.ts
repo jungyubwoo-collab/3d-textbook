@@ -33,6 +33,10 @@ export type PageBlock =
   | { type: 'caption'; text: string; placement?: 'flow' | 'bottom' }
   | { type: 'toc'; entries: TocEntry[] }
   | { type: 'lines'; count: number }
+  /** 왼쪽에 이름, 오른쪽에 내용(공식 등)이 있는 표 */
+  | { type: 'table'; rows: [label: string, value: string][] }
+  /** 3D 장면이 서는 자리의 도면 모눈. height를 생략하면 아래 설명 글 위까지 채운다. */
+  | { type: 'grid'; height?: number }
   | { type: 'spacer'; size: number };
 
 export type PageStyle = 'paper' | 'endpaper' | 'cover-front' | 'cover-back';

@@ -415,6 +415,57 @@ function layoutPaper(page: PageSpec, options: LayoutOptions): PageLayout {
         }
         y += 20;
         break;
+      case 'table': {
+        const labelFont = font(700, 23);
+        const valueFont = font(600, 25);
+        const labelWidth = 236;
+        const lineHeight = 38;
+        for (const [label, value] of block.rows) {
+          const lines = wrapText(value, contentWidth - labelWidth - 12, valueFont, measure);
+          const rowHeight = Math.max(60, lines.length * lineHeight + 22);
+          const center = y + rowHeight / 2;
+          text(label, left, center, labelFont, COLORS.accent);
+          lines.forEach((line, index) => {
+            const lineCenter = center + (index - (lines.length - 1) / 2) * lineHeight;
+            text(line, left + labelWidth, lineCenter, valueFont, COLORS.ink);
+          });
+          y += rowHeight;
+          items.push({
+            kind: 'line',
+            x1: left,
+            y1: y,
+            x2: right,
+            y2: y,
+            color: 'rgba(138, 127, 114, 0.35)',
+            lineWidth: 1.5,
+          });
+        }
+        y += 22;
+        break;
+      }
+      case 'grid': {
+        const step = 26;
+        const top = y;
+        const bottom = Math.min(bottomLimit, top + (block.height ?? bottomLimit - top - 110));
+        const line = (x1: number, y1: number, x2: number, y2: number, major: boolean) =>
+          items.push({
+            kind: 'line',
+            x1,
+            y1,
+            x2,
+            y2,
+            color: major ? COLORS.gridMajor : COLORS.gridMinor,
+            lineWidth: major ? 1.6 : 1,
+          });
+        for (let i = 0; left + i * step <= right + 0.5; i++) {
+          line(left + i * step, top, left + i * step, bottom, i % 5 === 0);
+        }
+        for (let i = 0; top + i * step <= bottom + 0.5; i++) {
+          line(left, top + i * step, right, top + i * step, i % 5 === 0);
+        }
+        y = bottom + 20;
+        break;
+      }
       case 'spacer':
         y += block.size;
         break;

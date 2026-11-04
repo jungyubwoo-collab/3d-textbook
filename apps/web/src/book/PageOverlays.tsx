@@ -1,9 +1,10 @@
 import { useCursor } from '@react-three/drei';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { book } from '../content/book.ts';
 import { describeStats, recordPrediction } from '../lib/api.ts';
+import { registerAction } from '../lib/capture.ts';
 import { getLearnerId } from '../lib/learner.ts';
 import { answerKey, bookStore, useBookStore } from '../state/bookStore.ts';
 import { COLORS, PAGE_HEIGHT } from './constants.ts';
@@ -54,32 +55,79 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
   );
 
   /** 덮개를 누름. 열렸으면 true, 아직 보기를 안 골라 잠겨 있으면 false */
-  const openFlap = (questionId: string): boolean => {
-    const store = bookStore.getState();
-    const key = answerKey(lessonId, questionId);
-    const answer = store.answers[key];
-    const question = questions.get(questionId);
-    if (!answer || !question) {
-      store.showToast('먼저 보기에서 예측을 골라 주세요.');
-      return false;
-    }
-    const correct = answer.choiceId === question.answerId;
-    if (!store.reveal(key, correct)) return true;
-    const feedback = correct
-      ? '정답이에요! 도장을 받았어요.'
-      : '아쉬워요. 해설을 읽고 실험으로 확인해 보세요.';
-    store.showToast(feedback);
-    void recordPrediction({
-      learnerId: getLearnerId(),
-      lessonId,
-      questionId,
-      choiceId: answer.choiceId,
-      isCorrect: correct,
-    }).then((stats) => {
-      if (stats) bookStore.getState().showToast(`${feedback} ${describeStats(stats)}`);
+  const openFlap = useCallback(
+    (questionId: string): boolean => {
+      const store = bookStore.getState();
+      const key = answerKey(lessonId, questionId);
+      const answer = store.answers[key];
+      const question = questions.get(questionId);
+      if (!answer || !question) {
+        store.showToast('먼저 보기에서 예측을 골라 주세요.');
+        return false;
+      }
+      const correct = answer.choiceId === question.answerId;
+      if (!store.reveal(key, correct)) return true;
+      const feedback = correct
+        ? '정답이에요! 도장을 받았어요.'
+        : '아쉬워요. 해설을 읽고 실험으로 확인해 보세요.';
+      store.showToast(feedback);
+      void recordPrediction({
+        learnerId: getLearnerId(),
+        lessonId,
+        questionId,
+        choiceId: answer.choiceId,
+        isCorrect: correct,
+      }).then((stats) => {
+        if (stats) bookStore.getState().showToast(`${feedback} ${describeStats(stats)}`);
+      });
+      return true;
+    },
+    [lessonId, questions],
+  );
+
+  // 보기·덮개·차례를 이름으로도 누를 수 있게 한다(시연 영상 녹화 스크립트용).
+  useEffect(() => {
+    const at = (rect: Rect) => (): [number, number, number] => {
+      const area = pageRectToBook(rect, side);
+      return [area.x, y, area.z];
+    };
+    const cleanups = layout.regions.flatMap((region) => {
+      switch (region.kind) {
+        case 'choice':
+          return [
+            registerAction(
+              `${lessonId}:choice:${region.questionId}:${region.choiceId}`,
+              () =>
+                bookStore
+                  .getState()
+                  .choose(answerKey(lessonId, region.questionId), region.choiceId),
+              at(region.rect),
+            ),
+          ];
+        case 'answer':
+          return [
+            registerAction(
+              `${lessonId}:flap:${region.questionId}`,
+              () => void openFlap(region.questionId),
+              at(region.rect),
+            ),
+          ];
+        case 'link':
+          return [
+            registerAction(
+              `toc:${region.pageId}`,
+              () => bookStore.getState().goTo(spreadOfPage(book.pages, region.pageId)),
+              at(region.rect),
+            ),
+          ];
+        case 'stamp':
+          return [];
+      }
     });
-    return true;
-  };
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
+  }, [layout, lessonId, side, y, openFlap]);
 
   return (
     <group>

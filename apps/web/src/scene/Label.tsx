@@ -1,8 +1,9 @@
 import { Billboard } from '@react-three/drei';
 import { useEffect, useMemo, type ComponentProps } from 'react';
-import * as THREE from 'three';
 import { COLORS } from '../book/constants.ts';
-import { FONT_FAMILY } from '../book/fonts.ts';
+import { createTextTexture, fontOf } from './canvasText.ts';
+
+const FONT_SIZE = 64;
 
 /** 장면 속에 띄우는 한글 꼬리표. 항상 카메라를 바라본다. */
 export function Label({
@@ -18,31 +19,31 @@ export function Label({
   background?: string;
 } & Omit<ComponentProps<typeof Billboard>, 'children'>) {
   const { texture, aspect } = useMemo(() => {
-    const fontSize = 64;
-    const font = `800 ${fontSize}px ${FONT_FAMILY}`;
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (context) context.font = font;
-    const textWidth = context ? context.measureText(text).width : text.length * fontSize;
-    canvas.width = Math.ceil(textWidth + fontSize * 1.1);
-    canvas.height = Math.ceil(fontSize * 1.6);
-    if (context) {
-      context.fillStyle = background;
-      context.strokeStyle = COLORS.ink;
-      context.lineWidth = 5;
-      context.beginPath();
-      context.roundRect(3, 3, canvas.width - 6, canvas.height - 6, canvas.height / 2);
-      context.fill();
-      context.stroke();
-      context.font = font;
-      context.fillStyle = color;
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(text, canvas.width / 2, canvas.height / 2 + 3);
-    }
-    const result = new THREE.CanvasTexture(canvas);
-    result.colorSpace = THREE.SRGBColorSpace;
-    return { texture: result, aspect: canvas.width / canvas.height };
+    const measure = document.createElement('canvas').getContext('2d');
+    if (measure) measure.font = fontOf(800, FONT_SIZE);
+    const textWidth = measure ? measure.measureText(text).width : text.length * FONT_SIZE;
+    const width = Math.ceil(textWidth + FONT_SIZE * 1.1);
+    const tall = Math.ceil(FONT_SIZE * 1.6);
+    const result = createTextTexture(
+      width,
+      tall,
+      (ctx, w, h) => {
+        ctx.fillStyle = background;
+        ctx.strokeStyle = COLORS.ink;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.roundRect(3, 3, w - 6, h - 6, h / 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.font = fontOf(800, FONT_SIZE);
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, w / 2, h / 2 + 3);
+      },
+      text,
+    );
+    return { texture: result, aspect: width / tall };
   }, [text, color, background]);
   useEffect(() => () => texture.dispose(), [texture]);
 

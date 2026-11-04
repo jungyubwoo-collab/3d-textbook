@@ -26,7 +26,10 @@ function blockText(block: PageBlock): string {
         ...question.choices.map((choice) => choice.label),
       ].join(' ');
     }
+    case 'table':
+      return block.rows.flat().join(' ');
     case 'lines':
+    case 'grid':
     case 'spacer':
       return '';
   }

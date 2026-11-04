@@ -13,10 +13,12 @@ export const LEAF_GAP = 0.0006;
 /** 책상 매트 윗면 높이 */
 export const BOOK_BASE_Y = 0.006;
 
-const reducedMotion =
+/** 운영체제에서 '동작 줄이기'를 켰는지 */
+export const REDUCED_MOTION =
   typeof window !== 'undefined' &&
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reducedMotion = REDUCED_MOTION;
 
 /** 책장 한 장을 넘기는 시간(초) */
 export const TURN_DURATION = reducedMotion ? 0.3 : 0.9;
@@ -26,6 +28,16 @@ export const TURN_STAGGER = reducedMotion ? 0 : 0.14;
 export const TURN_CURL = 0.8;
 /** 넘기는 도중 살짝 들어 올리는 높이 */
 export const TURN_LIFT = 0.012;
+
+/** 책장 가장자리를 잡아 끌 수 있는 폭(페이지 가로 대비, 바깥쪽에서부터) */
+export const DRAG_EDGE = 0.3;
+/** 이만큼(px) 움직여야 클릭이 아니라 끌기로 본다. */
+export const DRAG_THRESHOLD_PX = 6;
+/** 끌다가 놓았을 때 이만큼 넘어갔으면 끝까지 넘긴다. */
+export const DRAG_COMMIT = 0.32;
+
+/** 페이지가 펼쳐진 뒤 팝업 장면이 다 일어서 색이 칠해지기까지 걸리는 시간(초) */
+export const REVEAL_DURATION = reducedMotion ? 0.35 : 2.4;
 
 /** 페이지 텍스처 해상도(px) */
 export const TEXTURE_WIDTH = 1024;
@@ -50,4 +62,6 @@ export const COLORS = {
   flap: '#efe2c0',
   flapEdge: '#cdb98a',
   flapText: '#6b5a36',
+  gridMinor: 'rgba(58, 104, 148, 0.09)',
+  gridMajor: 'rgba(58, 104, 148, 0.2)',
 } as const;

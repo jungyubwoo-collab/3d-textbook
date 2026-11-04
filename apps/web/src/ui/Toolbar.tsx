@@ -10,7 +10,8 @@ const button =
 export function Toolbar({ pages }: { pages: PageSpec[] }) {
   const spread = useBookStore((state) => state.spread);
   const count = useBookStore((state) => state.spreadCount);
-  const { next, prev, goTo, resetView } = bookStore.getState();
+  const muted = useBookStore((state) => state.muted);
+  const { next, prev, goTo, resetView, toggleMuted } = bookStore.getState();
   const contents = pages.some((page) => page.id === 'contents')
     ? spreadOfPage(pages, 'contents')
     : undefined;
@@ -66,6 +67,29 @@ export function Toolbar({ pages }: { pages: PageSpec[] }) {
         <Chevron direction="right" />
       </button>
       <span className="mx-1 h-6 w-px bg-black/10" aria-hidden="true" />
+      <button
+        type="button"
+        className={button}
+        onClick={toggleMuted}
+        aria-label={muted ? '효과음 켜기' : '효과음 끄기'}
+        aria-pressed={!muted}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path d="M4 9v6h4l5 4V5L8 9z" strokeLinejoin="round" />
+          {muted ? (
+            <path d="M17 9l5 6M22 9l-5 6" strokeLinecap="round" />
+          ) : (
+            <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" strokeLinecap="round" />
+          )}
+        </svg>
+      </button>
       <button type="button" className={button} onClick={resetView} aria-label="시점 처음으로">
         <svg
           viewBox="0 0 24 24"

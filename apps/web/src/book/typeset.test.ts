@@ -90,6 +90,44 @@ describe('layoutPage', () => {
     expect(regions).toEqual([expect.objectContaining({ kind: 'link', pageId: 'lever-text' })]);
   });
 
+  it('lays out a formula table with one rule under each row', () => {
+    const { items } = layoutPage(
+      {
+        id: 'summary',
+        blocks: [
+          {
+            type: 'table',
+            rows: [
+              ['위치 에너지', 'Ep = m g h'],
+              ['운동량', 'p = m v'],
+            ],
+          },
+        ],
+      },
+      options,
+    );
+    const texts = items.flatMap((item) => (item.kind === 'text' ? [item.text] : []));
+    expect(texts).toEqual(['위치 에너지', 'Ep = m g h', '운동량', 'p = m v']);
+    expect(items.filter((item) => item.kind === 'line')).toHaveLength(2);
+  });
+
+  it('fills the space above the bottom caption with a blueprint grid', () => {
+    const { items, overflow } = layoutPage(
+      {
+        id: 'scene',
+        blocks: [
+          { type: 'subheading', text: '실험' },
+          { type: 'grid' },
+          { type: 'caption', text: '그림', placement: 'bottom' },
+        ],
+      },
+      options,
+    );
+    const lines = items.filter((item) => item.kind === 'line');
+    expect(lines.length).toBeGreaterThan(40);
+    expect(overflow).toBe(false);
+  });
+
   it('flags pages whose content runs past the bottom margin', () => {
     const long: PageSpec = { id: 'long', blocks: [{ type: 'lines', count: 40 }] };
     expect(layoutPage(long, options).overflow).toBe(true);

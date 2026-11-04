@@ -17,8 +17,14 @@ export function useBookRuntime(): BookRuntime {
 /** 팝업 장면이 받는 정보 */
 export interface SceneRuntime {
   lessonId: string;
-  /** 0 = 페이지에 납작하게 누움, 1 = 완전히 일어섬 */
+  /** 페이지가 얼마나 펼쳐졌는지. 0 = 장면이 페이지에 접혀 누움, 1 = 펼쳐짐 */
   openness: RefObject<number>;
+  /**
+   * 페이지가 다 펼쳐진 뒤 흐르는 등장 시간(0 → 1).
+   * 0이면 종이에 인쇄된 도면처럼 납작하고, 1이면 다 일어서 색까지 칠해진 상태다.
+   * 장면의 각 부분은 <PopUp at={…}>으로 이 시간에 맞춰 차례로 일어선다.
+   */
+  reveal: RefObject<number>;
 }
 
 export const SceneContext = createContext<SceneRuntime | null>(null);
@@ -31,5 +37,5 @@ export function useSceneRuntime(): SceneRuntime {
 
 /** 장면이 다 일어섰을 때만 조작을 받는다. */
 export function isSceneInteractive(scene: SceneRuntime): boolean {
-  return scene.openness.current > 0.95;
+  return scene.openness.current > 0.95 && scene.reveal.current > 0.92;
 }

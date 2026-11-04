@@ -16,12 +16,30 @@ describe('the sample book', () => {
     expect(validateBook(book.pages)).toEqual([]);
   });
 
-  it('opens the lever lesson as one spread: text on the left, 3D scene on the right', () => {
-    const spread = spreadOfPage(book.pages, 'lever-text');
-    const { left, right } = pagesOfSpread(book.pages, spread);
-    expect(left?.id).toBe('lever-text');
-    expect(right?.id).toBe('lever-scene');
-    expect(right?.scene).toBeDefined();
+  it('opens every lesson as one spread: text on the left, 3D scene on the right', () => {
+    const lessonIds = book.pages.flatMap((entry) => (entry.scene ? [entry.lessonId] : []));
+    expect(lessonIds).toEqual([
+      'free-fall',
+      'orbit',
+      'potential-energy',
+      'kinetic-energy',
+      'pendulum',
+      'momentum',
+    ]);
+    for (const id of lessonIds) {
+      const { left, right } = pagesOfSpread(book.pages, spreadOfPage(book.pages, `${id}-text`));
+      expect(left?.id).toBe(`${id}-text`);
+      expect(right?.id).toBe(`${id}-scene`);
+      expect(right?.scene).toBeDefined();
+    }
+  });
+
+  it('asks one prediction question per lesson', () => {
+    const questions = book.pages.flatMap((entry) =>
+      entry.blocks.flatMap((block) => (block.type === 'question' ? [entry.lessonId] : [])),
+    );
+    expect(questions).toHaveLength(6);
+    expect(new Set(questions).size).toBe(6);
   });
 });
 
