@@ -5,7 +5,8 @@ import { CAPTURE, logCaptureMusic } from './capture.ts';
  * 배경음악. 펼친 면에 맞는 곡(public/audio/music)을 틀고, 곡이 바뀌면 천천히 엇갈려 바꾼다.
  * 곡이 끝나면 잠깐 쉬었다가 처음부터 다시 튼다. ElevenLabs Music으로 만든 기악곡이다.
  */
-const VOLUME = 0.3;
+/** 곡 파일은 -20 LUFS로 맞춰 두었다. 효과음이 묻히지 않게 조금 낮춰 튼다. */
+const VOLUME = 0.4;
 const FADE_IN = 2.2;
 const FADE_OUT = 1.6;
 /** 곡이 끝난 뒤 다시 시작하기까지 쉬는 시간(초) */

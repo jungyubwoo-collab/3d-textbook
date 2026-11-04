@@ -28,18 +28,19 @@ interface SoundSpec {
   vary: number;
 }
 
+// 음량은 파일마다 잰 크기(100 ms 최대 RMS)를 바탕으로, 배경음악 위에서 고르게 들리도록 맞췄다.
 const SOUNDS: Record<SoundName, SoundSpec> = {
-  'page-turn': { files: ['page-turn-1', 'page-turn-2', 'page-turn-3'], volume: 0.5, vary: 0.05 },
-  unfold: { files: ['unfold'], volume: 0.55, vary: 0.03 },
-  sparkle: { files: ['sparkle'], volume: 0.3, vary: 0 },
+  'page-turn': { files: ['page-turn-1', 'page-turn-2', 'page-turn-3'], volume: 0.9, vary: 0.05 },
+  unfold: { files: ['unfold'], volume: 0.5, vary: 0.03 },
+  sparkle: { files: ['sparkle'], volume: 0.28, vary: 0 },
   tap: { files: ['tap'], volume: 0.45, vary: 0.08 },
-  pencil: { files: ['pencil'], volume: 0.5, vary: 0.05 },
+  pencil: { files: ['pencil'], volume: 0.4, vary: 0.05 },
   flap: { files: ['flap'], volume: 0.5, vary: 0.04 },
-  stamp: { files: ['stamp'], volume: 0.7, vary: 0.03 },
-  correct: { files: ['correct'], volume: 0.4, vary: 0 },
-  wrong: { files: ['wrong'], volume: 0.35, vary: 0 },
+  stamp: { files: ['stamp'], volume: 0.71, vary: 0.03 },
+  correct: { files: ['correct'], volume: 0.63, vary: 0 },
+  wrong: { files: ['wrong'], volume: 0.45, vary: 0 },
   whoosh: { files: ['whoosh'], volume: 0.35, vary: 0.08 },
-  knock: { files: ['knock-1', 'knock-2'], volume: 0.55, vary: 0.08 },
+  knock: { files: ['knock-1', 'knock-2'], volume: 0.82, vary: 0.08 },
 };
 
 /** 늦게 받은 소리는 이만큼 늦은 것까지만 낸다(초). 더 늦으면 엉뚱한 때 나므로 버린다. */
