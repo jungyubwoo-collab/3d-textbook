@@ -5,6 +5,7 @@ import { LESSON_ID, ORBIT_QUESTION } from './ids.ts';
 /** 1단원 중력 ② 뉴턴의 대포 */
 export const orbitLesson: Lesson = {
   id: LESSON_ID,
+  music: 'gravity',
   title: '떨어지면서 도는 달',
   textPage: [
     { type: 'eyebrow', text: '1단원 · 중력' },

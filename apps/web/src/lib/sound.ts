@@ -1,76 +1,108 @@
 import { bookStore } from '../state/bookStore.ts';
-import { CAPTURE } from './capture.ts';
+import { audioOutput, loadAudio, whenAudioReady } from './audio.ts';
+import { CAPTURE, logCaptureEffect } from './capture.ts';
 
 /**
- * 효과음은 파일 없이 Web Audio로 만든다(잡음을 걸러 종이 소리를 낸다).
+ * 효과음. ElevenLabs로 만든 짧은 소리 파일(public/audio/sfx)을 Web Audio로 낸다.
+ * 같은 소리가 여러 개면 번갈아 쓰고, 재생 속도를 조금씩 흔들어 똑같이 반복되지 않게 한다.
  * 첫 소리는 사용자가 누르거나 키를 친 뒤에만 난다(브라우저 자동 재생 정책).
  */
-let context: AudioContext | null = null;
-let noise: AudioBuffer | null = null;
+export type SoundName =
+  | 'page-turn'
+  | 'unfold'
+  | 'sparkle'
+  | 'tap'
+  | 'pencil'
+  | 'flap'
+  | 'stamp'
+  | 'correct'
+  | 'wrong'
+  | 'whoosh'
+  | 'knock';
 
-function audio(): AudioContext | null {
-  if (CAPTURE || bookStore.getState().muted || typeof AudioContext === 'undefined') return null;
-  try {
-    context ??= new AudioContext();
-    if (context.state === 'suspended') void context.resume();
-    return context;
-  } catch {
-    return null;
+interface SoundSpec {
+  files: string[];
+  /** 기본 음량(0~1) */
+  volume: number;
+  /** 재생 속도를 1 ± vary 안에서 흔든다. */
+  vary: number;
+}
+
+const SOUNDS: Record<SoundName, SoundSpec> = {
+  'page-turn': { files: ['page-turn-1', 'page-turn-2', 'page-turn-3'], volume: 0.5, vary: 0.05 },
+  unfold: { files: ['unfold'], volume: 0.55, vary: 0.03 },
+  sparkle: { files: ['sparkle'], volume: 0.3, vary: 0 },
+  tap: { files: ['tap'], volume: 0.45, vary: 0.08 },
+  pencil: { files: ['pencil'], volume: 0.5, vary: 0.05 },
+  flap: { files: ['flap'], volume: 0.5, vary: 0.04 },
+  stamp: { files: ['stamp'], volume: 0.7, vary: 0.03 },
+  correct: { files: ['correct'], volume: 0.4, vary: 0 },
+  wrong: { files: ['wrong'], volume: 0.35, vary: 0 },
+  whoosh: { files: ['whoosh'], volume: 0.35, vary: 0.08 },
+  knock: { files: ['knock-1', 'knock-2'], volume: 0.55, vary: 0.08 },
+};
+
+/** 늦게 받은 소리는 이만큼 늦은 것까지만 낸다(초). 더 늦으면 엉뚱한 때 나므로 버린다. */
+const LATE_LIMIT = 0.25;
+
+const soundUrl = (file: string): string => `${import.meta.env.BASE_URL}audio/sfx/${file}.mp3`;
+const lastVariant = new Map<SoundName, number>();
+
+/** 바로 앞에 쓴 것과 다른 번호를 고른다. count가 1이면 0. random은 0 이상 1 미만. */
+export function nextVariant(count: number, previous: number | undefined, random: number): number {
+  if (count <= 1) return 0;
+  if (previous === undefined || previous < 0 || previous >= count) {
+    return Math.min(count - 1, Math.floor(random * count));
   }
+  const pick = Math.min(count - 2, Math.floor(random * (count - 1)));
+  return pick >= previous ? pick + 1 : pick;
 }
 
-function noiseBuffer(ctx: AudioContext): AudioBuffer {
-  if (noise) return noise;
-  const length = Math.floor(ctx.sampleRate * 1.2);
-  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  let brown = 0;
-  for (let i = 0; i < length; i++) {
-    const white = Math.random() * 2 - 1;
-    brown = (brown + 0.02 * white) / 1.02;
-    data[i] = brown * 3 + white * 0.3;
+export interface PlayOptions {
+  /** 몇 초 뒤에 낼지 */
+  delay?: number;
+  /** 기본 음량에 곱할 값 */
+  volume?: number;
+}
+
+export function playSound(name: SoundName, { delay = 0, volume = 1 }: PlayOptions = {}): void {
+  if (bookStore.getState().muted) return;
+  const spec = SOUNDS[name];
+  const index = nextVariant(spec.files.length, lastVariant.get(name), Math.random());
+  lastVariant.set(name, index);
+  const file = spec.files[index];
+  if (!file) return;
+  const rate = 1 + (Math.random() * 2 - 1) * spec.vary;
+  const gain = spec.volume * volume;
+  if (CAPTURE) {
+    logCaptureEffect({ file, gain, rate }, delay);
+    return;
   }
-  noise = buffer;
-  return buffer;
+  const output = audioOutput();
+  if (!output) return;
+  const { context } = output;
+  const due = context.currentTime + delay;
+  void loadAudio(soundUrl(file)).then((buffer) => {
+    if (!buffer || context.currentTime - due > LATE_LIMIT) return;
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = rate;
+    const level = context.createGain();
+    level.gain.value = gain;
+    source.connect(level).connect(output.sfx);
+    source.start(Math.max(context.currentTime, due));
+  });
 }
 
-function burst(
-  delay: number,
-  duration: number,
-  volume: number,
-  filter: BiquadFilterType,
-  from: number,
-  to: number,
-): void {
-  const ctx = audio();
-  if (!ctx) return;
-  const start = ctx.currentTime + delay;
-  const source = ctx.createBufferSource();
-  source.buffer = noiseBuffer(ctx);
-  const shape = ctx.createBiquadFilter();
-  shape.type = filter;
-  shape.Q.value = 0.9;
-  shape.frequency.setValueAtTime(from, start);
-  shape.frequency.exponentialRampToValueAtTime(to, start + duration * 0.7);
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.exponentialRampToValueAtTime(volume, start + duration * 0.15);
-  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-  source.connect(shape).connect(gain).connect(ctx.destination);
-  source.start(start, Math.random() * 0.5, duration + 0.05);
+/** 종이 그림이 입체로 일어설 때: 종이 펼쳐지는 소리에 반짝임을 살짝 늦게 겹친다. */
+export function playReveal(): void {
+  playSound('unfold');
+  playSound('sparkle', { delay: 0.35 });
 }
 
-/** 책장이 스치며 넘어가는 소리 */
-export function playPageTurn(delaySeconds = 0): void {
-  burst(delaySeconds, 0.42, 0.09, 'bandpass', 800, 3400);
-}
-
-/** 그림이 종이에서 일어서는 소리 */
-export function playPop(): void {
-  burst(0, 0.32, 0.05, 'lowpass', 350, 2600);
-}
-
-/** 단추를 누르는 소리 */
-export function playTap(): void {
-  burst(0, 0.08, 0.06, 'highpass', 2500, 4000);
-}
+// 소리를 낼 수 있게 되면 효과음 파일을 미리 받아 둔다(모두 합쳐 수십 KB).
+whenAudioReady(() => {
+  for (const spec of Object.values(SOUNDS)) {
+    for (const file of spec.files) void loadAudio(soundUrl(file));
+  }
+});

@@ -32,6 +32,8 @@ export interface BookState {
   dragging: boolean;
   /** 책장 넘기는 소리 등 효과음을 껐는지 */
   muted: boolean;
+  /** 배경음악을 껐는지 */
+  musicMuted: boolean;
 
   configure: (spreadCount: number) => void;
   goTo: (spread: number) => void;
@@ -48,6 +50,7 @@ export interface BookState {
   resetView: () => void;
   setDragging: (dragging: boolean) => void;
   toggleMuted: () => void;
+  toggleMusic: () => void;
 }
 
 export const answerKey = (lessonId: string, questionId: string): string =>
@@ -65,6 +68,7 @@ export const bookStore = createStore<BookState>()(
       restingSpread: 0,
       dragging: false,
       muted: false,
+      musicMuted: false,
       answers: {},
       toast: null,
       viewResetCount: 0,
@@ -110,6 +114,7 @@ export const bookStore = createStore<BookState>()(
       resetView: () => set((state) => ({ viewResetCount: state.viewResetCount + 1 })),
       setDragging: (dragging) => set({ dragging }),
       toggleMuted: () => set((state) => ({ muted: !state.muted })),
+      toggleMusic: () => set((state) => ({ musicMuted: !state.musicMuted })),
     }),
     {
       name: '3d-textbook:progress',
@@ -117,6 +122,7 @@ export const bookStore = createStore<BookState>()(
       // 학습 기록과 소리 설정만 브라우저에 남긴다.
       partialize: (state) => ({
         muted: state.muted,
+        musicMuted: state.musicMuted,
         answers: Object.fromEntries(
           Object.entries(state.answers).map(([key, { choiceId, revealed, correct }]) => [
             key,

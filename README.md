@@ -87,8 +87,9 @@ apps/
     src/content/           책 내용: book.ts(페이지 순서), lessons/<단원>/
     src/scene/             장면 부품: PopUp(일어서기), SceneButton, Bars(에너지 막대), Label, PushArrow
     src/ink/               잉크 펜 그림 재질(빗금 음영 + 물감 번짐 + 윤곽선)
-    src/lib/               효과음(sound.ts), 영상 녹화 모드(capture.ts)
-    src/state/             zustand 상태(펼친 면, 학생의 답, 효과음)
+    src/lib/               소리(audio.ts, sound.ts 효과음, music.ts 배경음악), 영상 녹화 모드(capture.ts)
+    src/state/             zustand 상태(펼친 면, 학생의 답, 음악·효과음 켜기)
+    public/audio/          ElevenLabs로 만든 배경음악(music/)과 효과음(sfx/)
     src/ui/                3D 화면 위의 HTML(조작 막대, 알림)
   api/                     학습 기록 API
     prisma/                schema.prisma, 마이그레이션
@@ -109,7 +110,9 @@ compose.yaml               로컬 PostgreSQL
    - 재질은 `inkMaterial(색)`, 선은 메시 자식으로 `<InkLines />` 를 넣으면 잉크 그림처럼 보입니다. 유리처럼 투명한 것은 `glassMaterial`에 윤곽선을 끄고(`outline={false}`) 테두리를 따로 긋습니다.
    - 부품을 `<PopUp at={0.2}>`로 감싸면 등장 시간(0→1)의 그 시점에 페이지에서 솟아오릅니다(`mode`: `rise`·`grow`·`hinge`).
    - 조작 단추는 `<SceneButton id label position onPress />`. 처리기 첫 줄에서 `if (!allow()) return;`(`useLessonGate(문항ID)`)으로 "예측 먼저" 규칙을 지킵니다.
+   - 실험 속 순간(출발, 충돌, 착지)에는 `playSound('whoosh')`, `playSound('knock')`처럼 효과음을 낼 수 있습니다.
 3. `apps/web/src/content/book.ts`의 `lessons` 배열에 새 단원을 넣으면 차례와 펼침면이 함께 만들어집니다.
+   단원의 `music`에 곡 이름(`public/audio/music/<이름>.mp3`)을 적으면 그 단원을 펼쳤을 때 그 곡이 흐릅니다.
    글 페이지는 홀수 번째(왼쪽)에 와야 합니다. 어긋나면 개발 서버 콘솔과 `npm test`가 알려 줍니다.
 4. 페이지 내용이 길어 아래 여백을 넘으면 개발 서버 콘솔에 경고가 나옵니다. 내용을 줄이거나 페이지를 나누세요.
 
@@ -121,7 +124,9 @@ compose.yaml               로컬 PostgreSQL
 - **책장 끌기**: 페이지 바깥쪽 30%에 마우스를 올리면 모서리가 살짝 들리고, 잡아끌면 손을 따라 넘어갑니다. 1/3쯤 넘기고 놓으면 끝까지, 덜 넘기면 제자리로 돌아갑니다.
 - **페이지 내용**: 블록을 canvas에 조판해 텍스처로 붙입니다(`book/typeset.ts`, `book/paint.ts`). 한글 글꼴은 Pretendard를 번들합니다. 지금 펼친 면 근처의 장만 텍스처를 만들어 GPU 메모리를 아낍니다.
 - **2D → 3D**: 장면 페이지가 펼쳐지는 동안 카메라는 위에서 평면 도면처럼 내려다봅니다. 책장이 멈추면 ① 모눈 위의 잉크 선 그림이 부품 순서대로 솟아오르고(`PopUp`) ② 물감이 아래부터 번지듯 색이 차오르며(잉크 재질의 `uFillY`) ③ 카메라가 비스듬히 내려앉아 입체감을 보여 줍니다. 책장을 넘기기 시작하면 장면이 다시 눕습니다.
-- **효과음**: 책장 넘김, 장면이 일어설 때, 단추를 누를 때 잡음을 걸러 만든 소리를 냅니다(파일 없음, Web Audio). 조작 막대에서 끌 수 있습니다.
+- **배경음악**: 표지·차례·정리에서는 주제곡, 중력·에너지·운동량 단원에서는 단원마다 다른 곡이 흐릅니다. 단원이 바뀌면 두 곡이 천천히 엇갈려 바뀌고, 곡이 끝나면 잠깐 쉬었다 처음부터 다시 흐릅니다(`lib/music.ts`, `ui/Soundtrack.tsx`).
+- **효과음**: 책장 넘김(3가지를 번갈아), 그림이 일어설 때 종이 펼침 + 반짝임, 단추, 보기를 고를 때 연필, 덮개를 들 때 종이, 도장, 정답·오답 소리, 실험의 출발(바람)·충돌(톡) 소리를 냅니다(`lib/sound.ts`).
+- **소리 설정**: 조작 막대에서 배경음악과 효과음을 따로 끕니다(브라우저에 저장). 브라우저 정책 때문에 처음 누르거나 키를 친 뒤부터 소리가 나고, 탭을 가리면 멈춥니다.
 - **예측 기록**: 덮개를 열면 `POST /api/predictions`로 첫 예측을 남기고 `GET /api/predictions/stats`로 전체 정답률을 받아 알림에 보여 줍니다. 학습자 ID는 브라우저에 만든 익명 UUID입니다. 답과 도장은 브라우저(localStorage)에도 저장됩니다.
 
 ## 영상 녹화
@@ -130,7 +135,8 @@ compose.yaml               로컬 PostgreSQL
 느린 컴퓨터(헤드리스 Chromium의 소프트웨어 WebGL)에서도 끊김 없는 영상을 만들 수 있습니다.
 
 - `window.__book.actions()`: 누를 수 있는 동작 목록(장면 단추 `<단원>:<id>`, 보기, 덮개, 차례 링크). `run(id)`로 누르고 `screen(id)`로 화면 위치를 얻습니다.
-- 프레임마다 `advance(t)` 후 Playwright로 화면을 찍고 ffmpeg로 묶으면 됩니다. 녹화 중에는 효과음이 나지 않습니다.
+- 프레임마다 `advance(t)` 후 Playwright로 화면을 찍고 ffmpeg로 묶으면 됩니다.
+- 녹화 중에는 소리를 내지 않고 기록만 합니다. `window.__book.sounds()`가 언제 어떤 효과음(파일, 음량, 재생 속도)과 배경음악 바뀜이 있었는지 돌려주므로, 그대로 섞어 영상에 입히면 됩니다.
 
 ## 배포 메모
 
@@ -144,4 +150,5 @@ compose.yaml               로컬 PostgreSQL
 - TypeScript 7(네이티브 컴파일러)을 씁니다. typescript-eslint가 아직 TS 7을 지원하지 않아 린터는 Oxlint입니다.
 - npm 11은 의존성의 설치 스크립트를 허용 목록(`package.json`의 `allowScripts`)에 있는 것만 실행합니다. Prisma 엔진 때문에 `prisma`, `@prisma/engines`를 허용해 두었습니다.
 - 교재에 외부 이미지·3D 모델·글꼴을 넣을 때는 라이선스를 확인하세요(Pretendard는 OFL-1.1).
+- `public/audio`의 배경음악과 효과음은 ElevenLabs(Music, Sound Effects)로 만들었습니다. 상업적으로 쓰기 전에 만든 계정 요금제의 이용 약관을 확인하세요.
 - 운영체제의 "동작 줄이기" 설정이 켜져 있으면 책장 넘김·장면 등장·카메라 이동이 짧고 단순해집니다.

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type ComponentRef } from 'react';
 import type * as THREE from 'three';
 import { InkLines } from '../../../ink/Ink.tsx';
 import { inkMaterial } from '../../../ink/inkMaterial.ts';
+import { playSound } from '../../../lib/sound.ts';
 import { useLessonGate } from '../../../scene/gate.ts';
 import { Label } from '../../../scene/Label.tsx';
 import { TINT } from '../../../scene/palette.ts';
@@ -55,6 +56,8 @@ export function OrbitScene() {
   const clocks = useRef(new Map<ShotId, number>());
   const lines = useRef(new Map<ShotId, ComponentRef<typeof Line>>());
   const balls = useRef(new Map<ShotId, THREE.Mesh>());
+  /** 땅에 떨어지는 소리를 낸 포탄 */
+  const crashed = useRef(new Set<ShotId>());
 
   useFrame((_, delta) => {
     for (const id of fired) {
@@ -76,19 +79,26 @@ export function OrbitScene() {
       const ball = balls.current.get(id);
       const point = launch.scene[Math.floor(index)];
       if (ball && point) ball.position.set(...point);
+      if (reached >= total && launch.outcome === 'crash' && !crashed.current.has(id)) {
+        crashed.current.add(id);
+        playSound('knock', { volume: 0.7 });
+      }
       if (reached >= total && !finished.includes(id)) setFinished((current) => [...current, id]);
     }
   });
 
   const fire = (id: ShotId) => () => {
     if (!allow()) return;
+    playSound('whoosh');
     clocks.current.set(id, 0);
+    crashed.current.delete(id);
     setFinished((current) => current.filter((other) => other !== id));
     setFired((current) => (current.includes(id) ? current : [...current, id]));
   };
   const clear = () => {
     if (!allow()) return;
     clocks.current.clear();
+    crashed.current.clear();
     setFired([]);
     setFinished([]);
   };

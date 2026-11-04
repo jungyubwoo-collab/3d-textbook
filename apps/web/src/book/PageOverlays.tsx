@@ -6,6 +6,7 @@ import { book } from '../content/book.ts';
 import { describeStats, recordPrediction } from '../lib/api.ts';
 import { registerAction } from '../lib/capture.ts';
 import { getLearnerId } from '../lib/learner.ts';
+import { playSound } from '../lib/sound.ts';
 import { answerKey, bookStore, useBookStore } from '../state/bookStore.ts';
 import { COLORS, PAGE_HEIGHT } from './constants.ts';
 import { drawFlapFace, getStampCanvas, STAMP_ROTATION } from './paint.ts';
@@ -54,6 +55,19 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
     [page],
   );
 
+  /** 보기를 고름(연필로 체크하는 소리). 덮개를 연 뒤에는 바꿀 수 없다. */
+  const pick = useCallback(
+    (questionId: string, choiceId: string) => {
+      const store = bookStore.getState();
+      const key = answerKey(lessonId, questionId);
+      const answer = store.answers[key];
+      if (answer?.revealed || answer?.choiceId === choiceId) return;
+      store.choose(key, choiceId);
+      playSound('pencil');
+    },
+    [lessonId],
+  );
+
   /** 덮개를 누름. 열렸으면 true, 아직 보기를 안 골라 잠겨 있으면 false */
   const openFlap = useCallback(
     (questionId: string): boolean => {
@@ -67,6 +81,10 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
       }
       const correct = answer.choiceId === question.answerId;
       if (!store.reveal(key, correct)) return true;
+      // 종이를 드는 소리 → 맞히면 도장(StampEffect)과 맑은 소리, 틀리면 낮고 부드러운 소리
+      playSound('flap');
+      if (correct) playSound('correct', { delay: 0.42 });
+      else playSound('wrong', { delay: 0.3 });
       const feedback = correct
         ? '정답이에요! 도장을 받았어요.'
         : '아쉬워요. 해설을 읽고 실험으로 확인해 보세요.';
@@ -97,10 +115,7 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
           return [
             registerAction(
               `${lessonId}:choice:${region.questionId}:${region.choiceId}`,
-              () =>
-                bookStore
-                  .getState()
-                  .choose(answerKey(lessonId, region.questionId), region.choiceId),
+              () => pick(region.questionId, region.choiceId),
               at(region.rect),
             ),
           ];
@@ -127,7 +142,7 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
     return () => {
       for (const cleanup of cleanups) cleanup();
     };
-  }, [layout, lessonId, side, y, openFlap]);
+  }, [layout, lessonId, side, y, openFlap, pick]);
 
   return (
     <group>
@@ -141,11 +156,7 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
                 side={side}
                 y={y}
                 disabled={answers[region.questionId]?.revealed ?? false}
-                onSelect={() =>
-                  bookStore
-                    .getState()
-                    .choose(answerKey(lessonId, region.questionId), region.choiceId)
-                }
+                onSelect={() => pick(region.questionId, region.choiceId)}
               />
             );
           case 'link':
@@ -360,6 +371,7 @@ function StampEffect({
   const mesh = useRef<THREE.Mesh>(null);
   const material = useRef<THREE.MeshStandardMaterial>(null);
   const elapsed = useRef(0);
+  const thumped = useRef(false);
   const finished = useRef(false);
   const texture = useMemo(() => {
     const result = new THREE.CanvasTexture(getStampCanvas());
@@ -377,6 +389,11 @@ function StampEffect({
       mesh.current.position.y = y + 0.0016 + (1 - eased) * 0.14;
     }
     if (material.current) material.current.opacity = Math.min(1, k * 1.5);
+    // 도장이 종이에 닿는 순간(0.3초에 다 내려온다) 쿵 소리
+    if (!thumped.current && elapsed.current >= 0.27) {
+      thumped.current = true;
+      playSound('stamp');
+    }
     if (!finished.current && elapsed.current > 0.75) {
       finished.current = true;
       onDone();

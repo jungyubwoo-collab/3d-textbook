@@ -3,7 +3,14 @@ import { Suspense, use, useEffect, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { book } from '../content/book.ts';
 import { inkUniforms } from '../ink/inkMaterial.ts';
-import { actionPosition, CAPTURE, listActions, runAction } from '../lib/capture.ts';
+import {
+  actionPosition,
+  CAPTURE,
+  captureSounds,
+  listActions,
+  runAction,
+  setCaptureTime,
+} from '../lib/capture.ts';
 import { bookStore } from '../state/bookStore.ts';
 import { Book } from './Book.tsx';
 import { CameraRig } from './CameraRig.tsx';
@@ -39,9 +46,12 @@ function CaptureBridge() {
     const api = {
       /** 그 시각의 화면을 그리고, GPU가 다 그릴 때까지 기다린다(작업이 밀려 쌓이지 않게). */
       advance: (seconds: number) => {
+        setCaptureTime(seconds);
         advance(seconds);
         gl.getContext().finish();
       },
+      /** 녹화하는 동안 났어야 할 효과음과 배경음악 바뀜(영상에 소리를 입힐 때 쓴다) */
+      sounds: captureSounds,
       run: runAction,
       actions: listActions,
       store: bookStore,

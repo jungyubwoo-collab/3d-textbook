@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { InkLines } from '../../../ink/Ink.tsx';
 import { glassMaterial, inkMaterial } from '../../../ink/inkMaterial.ts';
+import { playSound } from '../../../lib/sound.ts';
 import { useLessonGate } from '../../../scene/gate.ts';
 import { Label } from '../../../scene/Label.tsx';
 import { TINT } from '../../../scene/palette.ts';
@@ -57,6 +58,8 @@ export function FreeFallScene() {
 
   const time = useRef(0);
   const nextStrobe = useRef(0);
+  /** 쇠구슬이 바닥에 닿는 소리를 냈는지 */
+  const landed = useRef(false);
   const ball = useRef<THREE.Group>(null);
   const plume = useRef<THREE.Group>(null);
   const needle = useRef<THREE.Group>(null);
@@ -90,6 +93,10 @@ export function FreeFallScene() {
       if (time.current >= duration) setPhase('landed');
     }
     const now = positions(phase === 'ready' ? 0 : time.current);
+    if (phase === 'falling' && !landed.current && now.ball <= FLOOR_Y + 1e-6) {
+      landed.current = true;
+      playSound('knock');
+    }
     if (ball.current) ball.current.position.y = now.ball;
     if (plume.current) {
       plume.current.position.set(TUBE.x + 0.024 + now.featherX, now.feather, TUBE.z);
@@ -110,6 +117,7 @@ export function FreeFallScene() {
     if (!allow()) return;
     time.current = 0;
     nextStrobe.current = 0;
+    landed.current = false;
     setGhosts([]);
     setPhase('falling');
   };

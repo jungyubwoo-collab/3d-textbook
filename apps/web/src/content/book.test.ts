@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  musicOfSpread,
   pageNumber,
   pagesOfSpread,
   spreadCount,
@@ -10,6 +11,9 @@ import {
 } from '../book/structure.ts';
 import type { PageSpec } from '../book/types.ts';
 import { book } from './book.ts';
+
+/** 그 페이지가 있는 펼침면의 배경음악 */
+const music = (pageId: string) => musicOfSpread(book, spreadOfPage(book.pages, pageId));
 
 describe('the sample book', () => {
   it('has no structural problems', () => {
@@ -41,6 +45,19 @@ describe('the sample book', () => {
     expect(questions).toHaveLength(6);
     expect(new Set(questions).size).toBe(6);
   });
+
+  it('plays the unit music on lesson spreads and the theme everywhere else', () => {
+    expect(musicOfSpread(book, 0)).toBe('theme');
+    expect(music('contents')).toBe('theme');
+    expect(music('free-fall-text')).toBe('gravity');
+    expect(music('orbit-text')).toBe('gravity');
+    expect(music('potential-energy-text')).toBe('energy');
+    expect(music('kinetic-energy-text')).toBe('energy');
+    expect(music('pendulum-text')).toBe('energy');
+    expect(music('momentum-text')).toBe('momentum');
+    expect(music('summary')).toBe('theme');
+    expect(musicOfSpread(book, spreadCount(book.pages) - 1)).toBe('theme');
+  });
 });
 
 function page(id: string, extra: Partial<PageSpec> = {}): PageSpec {
@@ -65,6 +82,25 @@ describe('book structure', () => {
       ['p3', 'back', true],
     ]);
     expect(() => toLeaves(pages.slice(0, 5))).toThrow('짝수');
+  });
+
+  it('picks the music of the right page first, then the left page, then the book', () => {
+    const musical = {
+      title: '시험',
+      music: 'theme',
+      pages: [
+        page('front', { style: 'cover-front' }),
+        page('inside', { music: 'left' }),
+        page('p1', { music: 'right' }),
+        page('p2', { music: 'left' }),
+        page('p3'),
+        page('back', { style: 'cover-back' }),
+      ],
+    };
+    expect(musicOfSpread(musical, 0)).toBe('theme');
+    expect(musicOfSpread(musical, 1)).toBe('right');
+    expect(musicOfSpread(musical, 2)).toBe('left');
+    expect(musicOfSpread({ ...musical, music: undefined }, 3)).toBeUndefined();
   });
 
   it('maps spreads to visible pages', () => {

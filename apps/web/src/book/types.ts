@@ -51,6 +51,8 @@ export interface PageSpec {
   scene?: ComponentType;
   /** 쪽 번호 표시 여부 (기본: 표지가 아니면 표시) */
   showNumber?: boolean;
+  /** 이 페이지를 펼쳤을 때 흐르는 배경음악(public/audio/music/<이름>.mp3). 없으면 책의 기본 곡 */
+  music?: string;
 }
 
 /** 단원 하나 = 왼쪽 글 페이지 + 오른쪽 3D 장면 페이지 */
@@ -60,10 +62,14 @@ export interface Lesson {
   textPage: PageBlock[];
   scenePage: PageBlock[];
   Scene: ComponentType;
+  /** 단원의 배경음악 이름 (PageSpec.music) */
+  music?: string;
 }
 
 export interface BookDefinition {
   title: string;
+  /** 단원 밖(표지, 차례, 정리)에서 흐르는 기본 배경음악 이름 */
+  music?: string;
   /** 짝수 개. [0]은 앞표지, 마지막은 뒤표지. 단원의 글 페이지는 홀수 번째(왼쪽)에 와야 한다. */
   pages: PageSpec[];
 }

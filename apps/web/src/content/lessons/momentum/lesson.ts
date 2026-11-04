@@ -5,6 +5,7 @@ import { LESSON_ID, MOMENTUM_QUESTION } from './ids.ts';
 /** 3단원 운동량 ① 운동량과 충돌 */
 export const momentumLesson: Lesson = {
   id: LESSON_ID,
+  music: 'momentum',
   title: '부딪혀도 지켜지는 양',
   textPage: [
     { type: 'eyebrow', text: '3단원 · 운동량' },

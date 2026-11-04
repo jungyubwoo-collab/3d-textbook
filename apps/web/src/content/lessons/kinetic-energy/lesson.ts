@@ -5,6 +5,7 @@ import { KINETIC_QUESTION, LESSON_ID } from './ids.ts';
 /** 2단원 에너지 ② 운동 에너지 */
 export const kineticEnergyLesson: Lesson = {
   id: LESSON_ID,
+  music: 'energy',
   title: '움직임에 담긴 에너지',
   textPage: [
     { type: 'eyebrow', text: '2단원 · 에너지' },

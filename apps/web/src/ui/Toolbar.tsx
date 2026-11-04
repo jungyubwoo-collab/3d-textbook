@@ -11,7 +11,8 @@ export function Toolbar({ pages }: { pages: PageSpec[] }) {
   const spread = useBookStore((state) => state.spread);
   const count = useBookStore((state) => state.spreadCount);
   const muted = useBookStore((state) => state.muted);
-  const { next, prev, goTo, resetView, toggleMuted } = bookStore.getState();
+  const musicMuted = useBookStore((state) => state.musicMuted);
+  const { next, prev, goTo, resetView, toggleMuted, toggleMusic } = bookStore.getState();
   const contents = pages.some((page) => page.id === 'contents')
     ? spreadOfPage(pages, 'contents')
     : undefined;
@@ -67,6 +68,27 @@ export function Toolbar({ pages }: { pages: PageSpec[] }) {
         <Chevron direction="right" />
       </button>
       <span className="mx-1 h-6 w-px bg-black/10" aria-hidden="true" />
+      <button
+        type="button"
+        className={button}
+        onClick={toggleMusic}
+        aria-label={musicMuted ? '배경음악 켜기' : '배경음악 끄기'}
+        aria-pressed={!musicMuted}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path d="M9 17V5l10-2v12" strokeLinejoin="round" />
+          <circle cx="6.5" cy="17" r="2.5" />
+          <circle cx="16.5" cy="15" r="2.5" />
+          {musicMuted && <path d="M3 3l18 18" strokeLinecap="round" />}
+        </svg>
+      </button>
       <button
         type="button"
         className={button}

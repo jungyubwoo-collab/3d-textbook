@@ -8,13 +8,15 @@ import { potentialEnergyLesson } from './lessons/potential-energy/lesson.ts';
 
 /** 단원 하나를 왼쪽(글) + 오른쪽(3D 장면) 두 페이지로 만든다. */
 function lessonPages(lesson: Lesson): [PageSpec, PageSpec] {
+  const music = lesson.music ? { music: lesson.music } : {};
   return [
-    { id: `${lesson.id}-text`, lessonId: lesson.id, blocks: lesson.textPage },
+    { id: `${lesson.id}-text`, lessonId: lesson.id, blocks: lesson.textPage, ...music },
     {
       id: `${lesson.id}-scene`,
       lessonId: lesson.id,
       blocks: lesson.scenePage,
       scene: lesson.Scene,
+      ...music,
     },
   ];
 }
@@ -35,6 +37,8 @@ const lessons = [
  */
 export const book: BookDefinition = {
   title: '움직임의 법칙',
+  // 배경음악: 표지·차례·정리는 주제곡, 단원마다 그 단원의 곡(public/audio/music)
+  music: 'theme',
   pages: [
     {
       id: 'cover',

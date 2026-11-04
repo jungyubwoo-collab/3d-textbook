@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import type * as THREE from 'three';
 import { InkLines } from '../../../ink/Ink.tsx';
 import { inkMaterial } from '../../../ink/inkMaterial.ts';
+import { playSound } from '../../../lib/sound.ts';
 import { useLessonGate } from '../../../scene/gate.ts';
 import { Label } from '../../../scene/Label.tsx';
 import { TINT } from '../../../scene/palette.ts';
@@ -29,6 +30,8 @@ export function KineticEnergyScene() {
   const [phase, setPhase] = useState<'ready' | 'roll' | 'slide' | 'done'>('ready');
   const [flags, setFlags] = useState<Partial<Record<Speed, number>>>({});
   const time = useRef(0);
+  /** 수레가 나무토막에 닿았는지(상태가 바뀌기 전 프레임에도 바로 알 수 있게) */
+  const hit = useRef(false);
   const cart = useRef<THREE.Group>(null);
   const block = useRef<THREE.Group>(null);
   const spring = useRef<THREE.Group>(null);
@@ -41,13 +44,15 @@ export function KineticEnergyScene() {
     let blockX = BLOCK.start;
     if (phase !== 'ready') time.current += delta / SLOW;
     const t = time.current;
-    if (phase === 'roll') {
+    if (phase === 'roll' && !hit.current) {
       cartX = Math.min(contact, CART.start + speed * t);
       if (cartX >= contact) {
+        hit.current = true;
         time.current = 0;
         setPhase('slide');
+        playSound('knock');
       }
-    } else if (phase === 'slide' || phase === 'done') {
+    } else if (phase !== 'ready') {
       cartX = contact;
       const stop = speed / deceleration;
       const s = Math.min(t, stop);
@@ -65,11 +70,14 @@ export function KineticEnergyScene() {
   const start = () => {
     if (!allow()) return;
     time.current = 0;
+    hit.current = false;
     setPhase('roll');
+    playSound('whoosh', { volume: 0.8 });
   };
   const pick = (value: Speed) => () => {
     if (!allow()) return;
     time.current = 0;
+    hit.current = false;
     setSpeed(value);
     setPhase('ready');
   };

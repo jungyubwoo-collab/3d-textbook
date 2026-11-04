@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { InkLines } from '../../../ink/Ink.tsx';
 import { inkMaterial } from '../../../ink/inkMaterial.ts';
+import { playSound } from '../../../lib/sound.ts';
 import { Bars } from '../../../scene/Bars.tsx';
 import { useLessonGate } from '../../../scene/gate.ts';
 import { Label } from '../../../scene/Label.tsx';
@@ -51,6 +52,8 @@ export function PendulumScene() {
     [peg],
   );
   const state = useRef<PendulumState>(releasedAt(START));
+  /** 바로 앞 프레임에 줄이 못에 걸려 있었는지(걸리는 순간 소리를 낸다) */
+  const onPeg = useRef(false);
   const bob = useRef<THREE.Mesh>(null);
   const upper = useRef<THREE.Mesh>(null);
   const lower = useRef<THREE.Mesh>(null);
@@ -77,6 +80,9 @@ export function PendulumScene() {
 
   useFrame((_, delta) => {
     if (swinging) state.current = stepPendulum(state.current, delta / SLOW, config);
+    const caught = state.current.side === 'peg';
+    if (swinging && caught && !onPeg.current) playSound('knock', { volume: 0.3 });
+    onPeg.current = caught;
     const position = toScene(bobPosition(state.current, config));
     bob.current?.position.set(...position);
     const pegPoint: [number, number, number] = [PIVOT[0], PIVOT[1] - PEG_DEPTH * METER, PIVOT[2]];
@@ -106,6 +112,7 @@ export function PendulumScene() {
     if (!allow()) return;
     restart();
     setSwinging(true);
+    playSound('whoosh', { volume: 0.6 });
   };
   const togglePeg = () => {
     if (!allow()) return;

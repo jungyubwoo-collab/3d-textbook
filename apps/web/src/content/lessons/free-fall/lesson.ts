@@ -5,6 +5,7 @@ import { FREE_FALL_QUESTION, LESSON_ID } from './ids.ts';
 /** 1단원 중력 ① 자유 낙하 */
 export const freeFallLesson: Lesson = {
   id: LESSON_ID,
+  music: 'gravity',
   title: '모든 것은 함께 떨어진다',
   textPage: [
     { type: 'eyebrow', text: '1단원 · 중력' },

@@ -1,4 +1,4 @@
-import type { PageSpec } from './types.ts';
+import type { BookDefinition, PageSpec } from './types.ts';
 
 /** 종이 한 장. 앞면은 오른쪽 페이지로, 뒷면은 넘긴 뒤 왼쪽 페이지로 보인다. */
 export interface Leaf {
@@ -38,6 +38,12 @@ export function pagesOfSpread(
     left: spread > 0 ? pages[2 * spread - 1] : undefined,
     right: 2 * spread < pages.length ? pages[2 * spread] : undefined,
   };
+}
+
+/** 펼침면 s 에서 흐를 배경음악. 오른쪽 페이지 → 왼쪽 페이지 → 책의 기본 곡 순서로 찾는다. */
+export function musicOfSpread(book: BookDefinition, spread: number): string | undefined {
+  const { left, right } = pagesOfSpread(book.pages, spread);
+  return right?.music ?? left?.music ?? book.music;
 }
 
 export function spreadOfPage(pages: PageSpec[], pageId: string): number {

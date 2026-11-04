@@ -36,3 +36,50 @@ export function actionPosition(id: string): [number, number, number] | null {
 export function listActions(): string[] {
   return [...actions.keys()];
 }
+
+/**
+ * 녹화 중에는 소리를 내지 않고, 언제 무슨 소리가 났어야 하는지 적어 둔다.
+ * 녹화 스크립트가 `window.__book.sounds()`로 받아 영상에 소리를 입힌다.
+ */
+export interface CaptureEffect {
+  kind: 'sound';
+  /** public/audio/sfx/ 안의 파일 이름(확장자 빼고) */
+  file: string;
+  t: number;
+  gain: number;
+  rate: number;
+}
+
+export interface CaptureMusic {
+  kind: 'music';
+  /** public/audio/music/ 안의 파일 이름. null이면 음악을 멈춘다. */
+  file: string | null;
+  t: number;
+  gain: number;
+  fadeIn: number;
+  fadeOut: number;
+  /** 곡이 끝난 뒤 다시 시작하기까지 쉬는 시간(초) */
+  gap: number;
+}
+
+let captureTime = 0;
+const sounds: (CaptureEffect | CaptureMusic)[] = [];
+
+/** 지금 그리는 프레임의 시각(초). advance가 정한다. */
+export function setCaptureTime(seconds: number): void {
+  captureTime = seconds;
+}
+
+/** delay초 뒤에 날 효과음을 적는다. */
+export function logCaptureEffect(effect: Omit<CaptureEffect, 'kind' | 't'>, delay = 0): void {
+  sounds.push({ kind: 'sound', ...effect, t: captureTime + delay });
+}
+
+/** 배경음악이 바뀌는 때를 적는다. */
+export function logCaptureMusic(music: Omit<CaptureMusic, 'kind' | 't'>): void {
+  sounds.push({ kind: 'music', ...music, t: captureTime });
+}
+
+export function captureSounds(): (CaptureEffect | CaptureMusic)[] {
+  return sounds.slice();
+}

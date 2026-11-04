@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import type * as THREE from 'three';
 import { InkLines } from '../../../ink/Ink.tsx';
 import { inkMaterial } from '../../../ink/inkMaterial.ts';
+import { playSound } from '../../../lib/sound.ts';
 import { useLessonGate } from '../../../scene/gate.ts';
 import { Label } from '../../../scene/Label.tsx';
 import { TINT } from '../../../scene/palette.ts';
@@ -59,6 +60,7 @@ export function MomentumScene() {
         m.collided = true;
         m.a = m.b - WIDTH;
         setAfter([va, vb]);
+        playSound('knock', { volume: kind === 'stick' ? 0.8 : 1 });
       }
       if (m.b >= STOP) {
         m.b = STOP;
@@ -87,6 +89,7 @@ export function MomentumScene() {
     reset();
     motion.current.va = A.speed;
     setPhase('run');
+    playSound('whoosh', { volume: 0.8 });
   };
   const pickKind = (value: CollisionKind) => () => {
     if (!allow()) return;

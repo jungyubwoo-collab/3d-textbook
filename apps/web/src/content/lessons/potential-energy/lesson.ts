@@ -5,6 +5,7 @@ import { LESSON_ID, POTENTIAL_QUESTION } from './ids.ts';
 /** 2단원 에너지 ① 위치 에너지 */
 export const potentialEnergyLesson: Lesson = {
   id: LESSON_ID,
+  music: 'energy',
   title: '높이에 저장된 에너지',
   textPage: [
     { type: 'eyebrow', text: '2단원 · 에너지' },

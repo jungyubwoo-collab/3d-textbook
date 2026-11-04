@@ -3,7 +3,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefOb
 import * as THREE from 'three';
 import { book } from '../content/book.ts';
 import { inkUniforms } from '../ink/inkMaterial.ts';
-import { playPageTurn, playPop } from '../lib/sound.ts';
+import { playReveal, playSound } from '../lib/sound.ts';
 import { bookStore, useBookStore } from '../state/bookStore.ts';
 import { BookLeaf } from './BookLeaf.tsx';
 import {
@@ -145,6 +145,8 @@ export function Book() {
   const shownSpread = useRef(spread);
   const settled = useRef(true);
   const drag = useRef<PageDrag | null>(null);
+  /** 손으로 끌어 넘긴 장. 끌기 시작할 때 이미 소리를 냈으므로 넘김이 끝날 때 또 내지 않는다. */
+  const handTurned = useRef<number | null>(null);
   const hover = useRef<EdgeHover | null>(null);
   const lifted = useRef<EdgeHover & { amount: number }>({ leaf: -1, direction: 1, amount: 0 });
   const [cursor, setCursor] = useState<'grab' | 'grabbing' | 'pointer' | null>(null);
@@ -164,7 +166,9 @@ export function Book() {
       animation.to = forward ? 1 : 0;
       animation.start = now + n * TURN_STAGGER;
       animation.duration = Math.max(0.3, Math.abs(animation.to - animation.from) * TURN_DURATION);
-      playPageTurn(n * TURN_STAGGER);
+      if (handTurned.current === leafIndex) handTurned.current = null;
+      // 여러 장을 한꺼번에 넘길 때는 둘째 장부터 작게(사르륵 넘어가는 느낌)
+      else playSound('page-turn', { delay: n * TURN_STAGGER, volume: n === 0 ? 1 : 0.55 });
     });
   }, [spread, clock]);
 
@@ -249,6 +253,7 @@ export function Book() {
         current.active = true;
         bookStore.getState().setDragging(true);
         setCursor('grabbing');
+        playSound('page-turn', { volume: 0.85 });
       }
       const x = bookX(event.clientX, event.clientY, current.surfaceY);
       if (x === null) return;
@@ -268,6 +273,7 @@ export function Book() {
         current.direction > 0 ? current.progress > DRAG_COMMIT : current.progress < 1 - DRAG_COMMIT;
       if (turned) {
         // 펼침면을 바꾸면 위의 효과가 지금 자리에서 끝까지 넘기는 애니메이션을 만든다.
+        handTurned.current = current.leaf;
         store.goTo(store.spread + current.direction);
         return;
       }
@@ -429,7 +435,7 @@ function PopupSlot({ page, spreadIndex, y }: { page: PageSpec; spreadIndex: numb
     const value = smoothstep(leftLeaf, 0.75, 1) * (1 - smoothstep(rightLeaf, 0, 0.3));
     openness.current = value;
     if (value > 0.999) {
-      if (reveal.current === 0) playPop();
+      if (reveal.current === 0) playReveal();
       reveal.current = Math.min(1, reveal.current + delta / REVEAL_DURATION);
     } else if (value < 0.02) {
       reveal.current = 0;

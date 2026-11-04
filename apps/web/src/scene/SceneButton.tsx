@@ -7,7 +7,7 @@ import { useSceneRuntime } from '../book/runtime.ts';
 import { InkLines } from '../ink/Ink.tsx';
 import { inkMaterial } from '../ink/inkMaterial.ts';
 import { registerAction } from '../lib/capture.ts';
-import { playTap } from '../lib/sound.ts';
+import { playSound } from '../lib/sound.ts';
 import { createTextTexture, fitFontSize, fontOf } from './canvasText.ts';
 import { PopUp } from './PopUp.tsx';
 import { TINT } from './palette.ts';
@@ -84,7 +84,7 @@ export function SceneButton({
   const trigger = () => {
     if (disabled) return;
     press.current = 1;
-    playTap();
+    playSound('tap');
     onPress();
   };
   const triggerRef = useRef(trigger);

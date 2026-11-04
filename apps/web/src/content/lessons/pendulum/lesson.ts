@@ -5,6 +5,7 @@ import { LESSON_ID, PENDULUM_QUESTION } from './ids.ts';
 /** 2단원 에너지 ③ 역학적 에너지 보존 */
 export const pendulumLesson: Lesson = {
   id: LESSON_ID,
+  music: 'energy',
   title: '사라지지 않는 에너지',
   textPage: [
     { type: 'eyebrow', text: '2단원 · 에너지' },
