@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { enterExperiment, experimentOfSpread } from '../book/experiment.ts';
 import { pagesOfSpread } from '../book/structure.ts';
 import type { BookDefinition, PageBlock } from '../book/types.ts';
 import { CAPTURE } from '../lib/capture.ts';
@@ -14,13 +15,72 @@ export function Hud({ book }: { book: BookDefinition }) {
           <p className="text-xs font-semibold tracking-wide text-accent">3D 교과서</p>
           <h1 className="text-lg font-extrabold text-ink">{book.title}</h1>
         </div>
+        <ExperimentExit book={book} />
       </header>
       <ToastMessage />
-      <footer className="flex justify-center">
+      <footer className="flex flex-col items-center gap-3">
+        <ExperimentStart book={book} />
         <Toolbar pages={book.pages} />
       </footer>
       <SpreadText book={book} />
     </div>
+  );
+}
+
+const pill =
+  'pointer-events-auto inline-flex h-11 animate-[toast-in_0.25s_ease-out] items-center gap-2 rounded-full px-5 text-sm font-bold shadow-lg ring-1 ring-black/10 transition';
+
+/**
+ * 2D 문서에서 3D 실험으로 들어가는 단추(조작 막대 위). 실험이 있는 펼침면에서 책장이 멈춰 있을 때만 보인다.
+ * 누르면 그림이 입체로 일어서고 카메라가 실험 장치로 다가간다. 페이지의 그림을 눌러도 같다.
+ */
+function ExperimentStart({ book }: { book: BookDefinition }) {
+  const spread = useBookStore((state) => state.spread);
+  const settled = useBookStore((state) => state.settled);
+  const experiment = useBookStore((state) => state.experiment);
+  const pending = useBookStore((state) => state.pendingSpread);
+  if (experiment || !settled || pending !== null || !experimentOfSpread(book, spread)) return null;
+  return (
+    <button
+      type="button"
+      className={`${pill} bg-accent text-paper hover:brightness-110`}
+      onClick={() => void enterExperiment(book)}
+    >
+      <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
+        <path d="M8 5.5v13l10.5-6.5z" />
+      </svg>
+      3D로 실험하기
+    </button>
+  );
+}
+
+/**
+ * 3D 실험을 접고 2D 문서로 돌아가는 단추(화면 오른쪽 위, Esc). 실험 단추를 가리지 않게 위에 둔다.
+ * 다음 장으로 넘겨도 먼저 접힌 뒤에 넘어간다.
+ */
+function ExperimentExit({ book }: { book: BookDefinition }) {
+  const spread = useBookStore((state) => state.spread);
+  const experiment = useBookStore((state) => state.experiment);
+  if (!experiment || !experimentOfSpread(book, spread)) return null;
+  return (
+    <button
+      type="button"
+      className={`${pill} bg-paper/95 text-ink hover:bg-paper`}
+      onClick={() => bookStore.getState().stopExperiment()}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="size-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <path d="M6 3h9l4 4v14H6z" strokeLinejoin="round" />
+        <path d="M9 12h7M9 16h7M9 8h3" strokeLinecap="round" />
+      </svg>
+      2D 문서로 돌아가기
+    </button>
   );
 }
 
@@ -71,6 +131,8 @@ function blockToText(block: PageBlock): string[] {
       ];
     case 'table':
       return block.rows.map(([label, value]) => `${label}: ${value}`);
+    case 'figure':
+      return [`그림: ${block.alt}`];
     case 'lines':
     case 'grid':
     case 'spacer':

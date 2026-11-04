@@ -4,6 +4,8 @@ import { createContext, useContext, type RefObject } from 'react';
 export interface BookRuntime {
   /** 장별 넘김 진행도. 0 = 오른쪽에 누움, 1 = 왼쪽으로 넘어감 */
   progress: RefObject<number[]>;
+  /** 펼침면별 팝업 장면의 등장 시간(0 = 2D 문서, 1 = 3D 실험). 장면이 없는 면은 없다. */
+  reveals: Map<number, RefObject<number>>;
 }
 
 export const BookRuntimeContext = createContext<BookRuntime | null>(null);

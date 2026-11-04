@@ -15,6 +15,7 @@ import {
   DRAG_EDGE,
   DRAG_THRESHOLD_PX,
   PAGE_WIDTH,
+  REDUCED_MOTION,
   REVEAL_DURATION,
   TURN_CURL,
   TURN_DURATION,
@@ -23,8 +24,9 @@ import {
 } from './constants.ts';
 import type { LeafRig } from './leafRig.ts';
 import { SpreadOverlays } from './PageOverlays.tsx';
+import { createFigureCover } from './usePageAsset.ts';
 import { BookRuntimeContext, SceneContext, useBookRuntime, type SceneRuntime } from './runtime.ts';
-import { computeStack, curlWeights, easeInOutCubic, type Stack } from './stack.ts';
+import { computeStack, curlWeights, easeInOutCubic, pageRectToBook, type Stack } from './stack.ts';
 import { toLeaves, type Leaf } from './structure.ts';
 import type { PageSpec } from './types.ts';
 
@@ -136,6 +138,7 @@ export function Book() {
   const rigs = useRef<(LeafRig | null)[]>([]);
   // 처음 그릴 때의 펼침면 상태에서 시작한다(애니메이션 없이).
   const progress = useRef<number[]>(leaves.map((leaf) => (leaf.index < spread ? 1 : 0)));
+  const runtime = useMemo(() => ({ progress, reveals: new Map<number, RefObject<number>>() }), []);
   const animations = useRef<TurnAnimation[]>(
     leaves.map((leaf) => {
       const value = leaf.index < spread ? 1 : 0;
@@ -176,6 +179,12 @@ export function Book() {
     const now = clock.elapsedTime;
     const dragging = drag.current?.active ? drag.current : null;
     let allSettled = !dragging;
+
+    // 3D 실험 중에 넘기기를 눌렀으면, 장면이 다 접혀 2D 문서로 돌아온 다음에 넘긴다.
+    const store = bookStore.getState();
+    if (store.pendingSpread !== null && !store.experiment) {
+      if ((runtime.reveals.get(store.spread)?.current ?? 0) === 0) store.flushPending();
+    }
 
     // 가장자리 들림은 부드럽게 들어갔다 나온다.
     const target = hover.current && !dragging && settled.current ? hover.current : null;
@@ -225,8 +234,8 @@ export function Book() {
   /** 누른 곳이 책장 가장자리(끌어서 넘길 수 있는 곳)인지 */
   const edgeAt = useCallback(
     (x: number): (EdgeHover & { width: number }) | null => {
-      const { spread: current, settled: resting } = bookStore.getState();
-      if (!resting) return null;
+      const { spread: current, settled: resting, experiment, pendingSpread } = bookStore.getState();
+      if (!resting || experiment || pendingSpread !== null) return null;
       const right = leaves[current];
       const left = leaves[current - 1];
       if (x > 0 && right) {
@@ -331,7 +340,6 @@ export function Book() {
   const register = useCallback((index: number, rig: LeafRig | null) => {
     rigs.current[index] = rig;
   }, []);
-  const runtime = useMemo(() => ({ progress }), []);
 
   return (
     <BookRuntimeContext value={runtime}>
@@ -416,32 +424,64 @@ function Spine({
 
 /** 장면이 가장 높이 올라가는 높이(색 번짐이 이 높이까지 차오른다) */
 const SCENE_TOP = 0.75;
+/** 3D 실험을 접어 2D 문서로 돌아가는 시간(초) */
+const FOLD_DURATION = REDUCED_MOTION ? 0.3 : 1.4;
 
 /**
- * 오른쪽 페이지의 팝업 장면.
- * 1) 왼쪽 장이 내려앉아 페이지가 펼쳐지면(openness) 도면이 페이지에 인쇄된 상태가 되고,
- * 2) 이어서 등장 시간(reveal)이 흐르며 각 부분이 차례로 일어서고 아래부터 색이 번진다.
- * 3) 오른쪽 장이 들리기 시작하면 장면 전체가 다시 페이지로 접혀 눕는다.
+ * 오른쪽 페이지의 팝업 장면. 평소에는 2D 문서(페이지에 인쇄된 교과서 그림)로만 보인다.
+ * 3D 실험을 켜면(bookStore.experiment) 등장 시간(reveal)이 0 → 1로 흐르며
+ * 그림 칸이 빈 모눈으로 덮이고, 장치가 부분마다 차례로 일어서고, 아래부터 색이 번진다.
+ * 실험을 끄면 거꾸로 접혀(나중에 선 것부터 눕고 색이 빠진다) 다시 인쇄된 그림이 된다.
  */
 function PopupSlot({ page, spreadIndex, y }: { page: PageSpec; spreadIndex: number; y: number }) {
-  const { progress } = useBookRuntime();
+  const { progress, reveals } = useBookRuntime();
+  const gl = useThree((state) => state.gl);
+  const camera = useThree((state) => state.camera);
+  const world = useThree((state) => state.scene);
   const group = useRef<THREE.Group>(null);
   const openness = useRef(0);
   const reveal = useRef(0);
+  const folding = useRef(false);
+  /** 셰이더를 미리 만든 장면 부품 수(장면 코드가 늦게 받아지면 다시 만든다) */
+  const compiled = useRef(0);
+
+  // 책이 "장면이 다 접혔는지" 보고 미뤄 둔 넘기기를 할 수 있게 등장 시간을 알려 둔다.
+  useEffect(() => {
+    reveals.set(spreadIndex, reveal);
+    return () => {
+      if (reveals.get(spreadIndex) === reveal) reveals.delete(spreadIndex);
+    };
+  }, [reveals, spreadIndex]);
 
   useFrame((_, delta) => {
     const leftLeaf = progress.current[spreadIndex - 1] ?? 1;
     const rightLeaf = progress.current[spreadIndex] ?? 0;
     const value = smoothstep(leftLeaf, 0.75, 1) * (1 - smoothstep(rightLeaf, 0, 0.3));
     openness.current = value;
-    if (value > 0.999) {
+    const { experiment, spread } = bookStore.getState();
+    if (experiment && spread === spreadIndex && value > 0.999) {
       if (reveal.current === 0) playReveal();
+      folding.current = false;
       reveal.current = Math.min(1, reveal.current + delta / REVEAL_DURATION);
-    } else if (value < 0.02) {
-      reveal.current = 0;
+    } else if (reveal.current > 0) {
+      if (!folding.current) {
+        folding.current = true;
+        playSound('unfold', { volume: 0.6 });
+      }
+      reveal.current = Math.max(0, reveal.current - delta / FOLD_DURATION);
     }
     if (!group.current) return;
-    group.current.visible = value > 0.002;
+    // 문서 상태로 멈춰 있을 때 장면의 셰이더를 미리 만든다(처음 펼칠 때 멈칫하지 않게).
+    if (
+      value > 0.999 &&
+      reveal.current === 0 &&
+      compiled.current !== group.current.children.length
+    ) {
+      compiled.current = group.current.children.length;
+      group.current.visible = true;
+      gl.compile(group.current, camera, world);
+    }
+    group.current.visible = value > 0.002 && reveal.current > 0;
     group.current.scale.y = Math.max(0.002, value);
     if (group.current.visible) {
       const fill = smoothstep(reveal.current, 0.2, 0.95);
@@ -456,14 +496,62 @@ function PopupSlot({ page, spreadIndex, y }: { page: PageSpec; spreadIndex: numb
   const Scene = page.scene;
   if (!Scene) return null;
   return (
-    <group position={[PAGE_WIDTH / 2, y, 0]}>
-      <group ref={group}>
-        <SceneContext value={scene}>
-          <Suspense fallback={null}>
-            <Scene />
-          </Suspense>
-        </SceneContext>
+    <>
+      <FigureCover page={page} y={y} reveal={reveal} />
+      <group position={[PAGE_WIDTH / 2, y, 0]}>
+        <group ref={group}>
+          <SceneContext value={scene}>
+            <Suspense fallback={null}>
+              <Scene />
+            </Suspense>
+          </SceneContext>
+        </group>
       </group>
-    </group>
+    </>
+  );
+}
+
+/**
+ * 3D 실험을 하는 동안 2D 그림 칸을 빈 모눈 종이로 덮는다.
+ * 인쇄된 그림이 사라지고 그 자리에서 장치가 일어서는 것처럼 보인다.
+ */
+function FigureCover({
+  page,
+  y,
+  reveal,
+}: {
+  page: PageSpec;
+  y: number;
+  reveal: RefObject<number>;
+}) {
+  const cover = useMemo(() => createFigureCover(page, 'right'), [page]);
+  useEffect(() => () => cover?.texture.dispose(), [cover]);
+  const mesh = useRef<THREE.Mesh>(null);
+  const material = useRef<THREE.MeshStandardMaterial>(null);
+  useFrame(() => {
+    const k = Math.min(1, reveal.current / 0.12);
+    if (mesh.current) mesh.current.visible = k > 0;
+    if (material.current) material.current.opacity = k;
+  });
+  if (!cover) return null;
+  const area = pageRectToBook(cover.rect, 'right');
+  return (
+    <mesh
+      ref={mesh}
+      position={[area.x, y + 0.0008, area.z]}
+      rotation-x={-Math.PI / 2}
+      visible={false}
+      receiveShadow
+    >
+      <planeGeometry args={[area.w, area.h]} />
+      <meshStandardMaterial
+        ref={material}
+        map={cover.texture}
+        transparent
+        opacity={0}
+        roughness={0.92}
+        depthWrite={false}
+      />
+    </mesh>
   );
 }

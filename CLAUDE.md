@@ -17,9 +17,11 @@
   - `structure.ts` 페이지 → 장(leaf) → 펼침면(spread) 계산. 짝수 번째 페이지 = 오른쪽.
   - `typeset.ts` 블록을 canvas 좌표로 배치(순수 함수, 테스트 있음). `paint.ts` 실제 그리기.
   - `Book.tsx` 넘김 애니메이션(뼈 회전, `stack.ts`의 `curlWeights`), 가장자리 끌기·들림, 책등, 팝업 슬롯(등장 시간 `reveal`과 잉크 번짐 높이). `PageOverlays.tsx` 보기·차례 클릭 영역, 덮개, 도장 효과.
-  - `CameraRig.tsx` 시점: 넘기는 중에는 위에서(평면), 장면 면에 멈추면 비스듬히(입체).
+  - `CameraRig.tsx` 시점: 평소(2D 문서)에는 펼친 책 전체를 위에서, 3D 실험 중에는 실험 장치로 다가가 비스듬히(단원의 `focus`).
   - `leafRig.ts` 뼈대가 든 종이 메시. `usePageAsset.ts` 페이지 텍스처(가까운 장만 생성).
 - `apps/web/src/content/` — 책 내용 "움직임의 법칙". `book.ts`의 `lessons` 배열이 단원 순서, `lessons/<id>/`가 단원 하나: `ids.ts`(단원·문항 ID), `lesson.ts`(글 블록 + 장면 페이지 블록), `physics.ts`(+테스트), 장면 컴포넌트.
+- `apps/web/src/book/experiment.ts` — 펼침면의 3D 실험 찾기(`experimentOfSpread`)와 켜기(`enterExperiment`, 예측을 먼저 골라야 켜진다). 상태는 `bookStore`의 `experiment`(2D 문서 / 3D 실험)와 `pendingSpread`(실험 중에 넘기면 접은 뒤 넘어갈 면).
+- `apps/web/src/figure/kit.ts` — 2D 교과서 그림 도구(820 × 940 설계 좌표, `fitFigure`). 단원마다 `lessons/<id>/figure.ts`가 장면 페이지의 `figure` 블록을 만든다.
 - `apps/web/src/scene/` — 장면 부품. `PopUp`(등장 시간 `at`에 솟아오름, `rise`/`grow`/`hinge`), `SceneButton`, `Bars`, `Label`, `PushArrow`, `useLessonGate`(예측 전 조작 잠금).
 - `apps/web/src/ink/` — 잉크 재질(`inkMaterial(color)`, 툰 + 화면 좌표 빗금 + 아래부터 차오르는 물감 `inkUniforms.uFillY`)과 `<InkLines />`, 투명 `glassMaterial`.
 - `apps/web/src/lib/` — 소리: `audio.ts`(AudioContext, 첫 입력 뒤에 열림), `sound.ts`(효과음 `playSound(이름)`), `music.ts`(배경음악 `setMusic(곡)`, 크로스페이드). `capture.ts`(`?capture` 영상 녹화 모드, 동작 등록, 소리 기록).
@@ -38,6 +40,7 @@
 - 단원·문항·보기 ID는 소문자-하이픈. API에 저장되므로 공개 후 바꾸지 않는다.
 - 테스트는 대상 파일 옆 `*.test.ts(x)`. 3D(WebGL)는 jsdom에서 못 돌리므로 계산은 순수 함수로 빼서 테스트한다(단원별 `physics.ts`, `typeset.ts`, `structure.ts`, `stack.ts`).
 - 효과음은 `playSound('이름')`으로만 낸다. 새 소리는 `sound.ts`의 `SOUNDS`에 파일·음량을 등록하고 파일은 `public/audio/sfx/`에 둔다. 단원 배경음악은 `Lesson.music`.
+- 장면 페이지는 `figure` 블록(2D 그림)을 둔다. 그림만 보고도 실험을 알 수 있게 장치·이름표·알고 있는 사실을 그리고, 예측할 결과는 물음표로 남긴다(정답을 그리지 않는다). 그림 속 글자는 블록의 `text`에 모아야 글꼴이 미리 받아진다.
 - 장면 조작 처리기는 첫 줄에서 `if (!allow()) return;`(`useLessonGate(문항ID)`). 장면 단추는 `SceneButton`을 쓰면 녹화용 동작(`<단원>:<id>`)으로도 등록된다.
 - Oxlint의 React Compiler 규칙(`react/immutability`)은 훅이 돌려준 값을 고치는 것을 막는다. 매 프레임 고치는 버퍼는 메서드를 가진 객체(예: 진자의 `createTrail()`)나 ref로 감싼다.
 
@@ -48,8 +51,9 @@
 - drei 10의 `<Outlines>`는 `screenspace`를 끈 기본값에서 thickness가 픽셀, 켜면 월드 단위다(이름과 반대). `InkLines`를 거쳐서만 쓴다. drei를 올린 뒤에는 장면이 검은 덩어리로 덮이지 않는지 화면으로 확인한다.
 - 오른쪽 페이지(짝수 번째)에만 `scene`을 둘 수 있다. `validateBook`이 검사하고 `content/book.test.ts`가 실패한다.
 - 페이지 내용이 넘치면 개발 서버 콘솔에 경고가 나온다. 페이지를 나누거나 글을 줄인다.
-- 3D 화면을 고친 뒤에는 실제로 띄워서 확인한다. 헤드리스 Chromium에서는 `--use-angle=swiftshader`로 WebGL을 켤 수 있다. 느리므로 애니메이션 중간은 `?capture`로 열고 `window.__book.advance(초)`로 시간을 정해 찍는다(`advance`가 GPU를 `finish()`까지 기다린다). 녹화 모드에서는 소리를 내지 않고 `window.__book.sounds()`에 기록만 한다.
+- 3D 화면을 고친 뒤에는 실제로 띄워서 확인한다. 헤드리스 Chromium에서는 `--use-angle=swiftshader`로 WebGL을 켤 수 있다. 느리므로 애니메이션 중간은 `?capture`로 열고 `window.__book.advance(초)`로 시간을 정해 찍는다(`advance`가 화소 하나를 읽어 GPU가 다 그릴 때까지 기다린다. 소프트웨어 렌더러는 `finish()`로는 기다리지 않는다). 녹화 모드에서는 소리를 내지 않고 `window.__book.sounds()`에 기록만 한다.
 - 투명 재질(`glassMaterial`, 반투명 막대)에 `<InkLines />`의 윤곽선을 켜면 껍질이 비쳐 검게 칠해진다. `outline={false}`로 끄고 테두리를 직접 긋는다.
 - 팝업이 일어서기 전·책장 넘김 중처럼 물체가 납작하게 눌리면 윤곽선 껍질이 물체를 검게 덮는다. `InkLines`가 월드 행렬의 눌림(`ink/flatness.ts`)을 보고 그동안 껍질을 숨기므로, 장면에서 drei `<Outlines>`를 직접 쓰지 않는다.
+- 장면은 2D 문서 상태(등장 시간 0)에서는 보이지 않고, 그림 칸 덮개(`FigureCover`)는 3D 실험 중에만 보인다. 장면 셰이더는 문서 상태로 멈춰 있을 때 `gl.compile`로 미리 만들어 둔다(처음 펼칠 때 멈칫하지 않게).
 - 잉크 물감 높이 `inkUniforms.uFillY`는 모든 잉크 재질이 함께 쓰는 값이다. 팝업 슬롯이 장면마다 정하므로 장면 안에서 바꾸지 않는다.
 - TypeScript 7을 쓰므로 typescript-eslint는 쓰지 않는다. 린트는 Oxlint(`.oxlintrc.json`, 타입 기반 규칙 포함).

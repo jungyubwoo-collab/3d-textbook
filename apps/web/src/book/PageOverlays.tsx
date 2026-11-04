@@ -11,6 +11,7 @@ import { answerKey, bookStore, useBookStore } from '../state/bookStore.ts';
 import { COLORS, PAGE_HEIGHT } from './constants.ts';
 import { drawFlapFace, getStampCanvas, STAMP_ROTATION } from './paint.ts';
 import { pageRectToBook, surfaceHeights, type Stack } from './stack.ts';
+import { enterExperiment } from './experiment.ts';
 import { pagesOfSpread, spreadOfPage } from './structure.ts';
 import type { Rect } from './typeset.ts';
 import type { PageSpec, Question } from './types.ts';
@@ -44,6 +45,7 @@ export function SpreadOverlays({ stack }: { stack: Stack }) {
 function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: number }) {
   const layout = getPageLayout(page, side);
   const answers = usePageAnswers(page);
+  const experiment = useBookStore((state) => state.experiment);
   const lessonId = page.lessonId ?? '';
   const questions = useMemo(
     () =>
@@ -135,6 +137,14 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
               at(region.rect),
             ),
           ];
+        case 'figure':
+          return [
+            registerAction(
+              `${lessonId}:experiment`,
+              () => void enterExperiment(book),
+              at(region.rect),
+            ),
+          ];
         case 'stamp':
           return [];
       }
@@ -167,6 +177,17 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
                 side={side}
                 y={y}
                 onSelect={() => bookStore.getState().goTo(spreadOfPage(book.pages, region.pageId))}
+              />
+            );
+          case 'figure':
+            return (
+              <HitArea
+                key={index}
+                rect={region.rect}
+                side={side}
+                y={y}
+                disabled={experiment}
+                onSelect={() => void enterExperiment(book)}
               />
             );
           case 'answer':

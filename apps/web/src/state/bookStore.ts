@@ -34,6 +34,13 @@ export interface BookState {
   muted: boolean;
   /** 배경음악을 껐는지 */
   musicMuted: boolean;
+  /**
+   * 지금 펼친 면에서 3D 실험을 하는 중인지. false면 2D 문서(인쇄된 그림)로 본다.
+   * 실험 중에 다른 면으로 가려고 하면 먼저 장면을 접어 문서로 돌아간 뒤 넘긴다.
+   */
+  experiment: boolean;
+  /** 실험을 접는 동안 미뤄 둔 넘기기. 장면이 다 접히면 이 면으로 넘어간다. */
+  pendingSpread: number | null;
 
   configure: (spreadCount: number) => void;
   goTo: (spread: number) => void;
@@ -51,6 +58,12 @@ export interface BookState {
   setDragging: (dragging: boolean) => void;
   toggleMuted: () => void;
   toggleMusic: () => void;
+  /** 2D 그림을 3D 실험으로 펼친다. 책장이 멈춰 있을 때만. */
+  startExperiment: () => void;
+  /** 3D 실험을 접고 2D 문서로 돌아간다. */
+  stopExperiment: () => void;
+  /** 장면이 다 접혔을 때 팝업 슬롯이 불러, 미뤄 둔 넘기기를 한다. */
+  flushPending: () => void;
 }
 
 export const answerKey = (lessonId: string, questionId: string): string =>
@@ -69,6 +82,8 @@ export const bookStore = createStore<BookState>()(
       dragging: false,
       muted: false,
       musicMuted: false,
+      experiment: false,
+      pendingSpread: null,
       answers: {},
       toast: null,
       viewResetCount: 0,
@@ -77,6 +92,12 @@ export const bookStore = createStore<BookState>()(
         set((state) => ({ spreadCount, spread: Math.min(state.spread, spreadCount - 1) })),
       goTo: (spread) => {
         const target = Math.max(0, Math.min(get().spreadCount - 1, Math.round(spread)));
+        const { experiment, pendingSpread } = get();
+        // 3D 실험 중(또는 접는 중)이면 먼저 문서로 돌아가고, 다 접힌 뒤에 넘긴다.
+        if (experiment || pendingSpread !== null) {
+          set({ experiment: false, pendingSpread: target === get().spread ? null : target });
+          return;
+        }
         if (target !== get().spread) set({ spread: target, settled: false });
       },
       next: () => get().goTo(get().spread + 1),
@@ -115,6 +136,16 @@ export const bookStore = createStore<BookState>()(
       setDragging: (dragging) => set({ dragging }),
       toggleMuted: () => set((state) => ({ muted: !state.muted })),
       toggleMusic: () => set((state) => ({ musicMuted: !state.musicMuted })),
+      startExperiment: () => {
+        if (get().settled) set({ experiment: true, pendingSpread: null });
+      },
+      stopExperiment: () => set({ experiment: false }),
+      flushPending: () => {
+        const { pendingSpread, experiment } = get();
+        if (pendingSpread === null || experiment) return;
+        set({ pendingSpread: null });
+        get().goTo(pendingSpread);
+      },
     }),
     {
       name: '3d-textbook:progress',

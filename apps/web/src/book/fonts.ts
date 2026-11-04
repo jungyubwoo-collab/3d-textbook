@@ -28,6 +28,8 @@ function blockText(block: PageBlock): string {
     }
     case 'table':
       return block.rows.flat().join(' ');
+    case 'figure':
+      return `${block.text} ${block.alt}`;
     case 'lines':
     case 'grid':
     case 'spacer':
@@ -38,7 +40,7 @@ function blockText(block: PageBlock): string {
 /** 페이지 글자를 모두 모은다(글꼴 부분 파일을 미리 받기 위해). */
 export function collectText(pages: PageSpec[]): string {
   const fixed =
-    '0123456789①②③④⑤–예측해 보세요정답과 해설덮개를 눌러 들춰 확인하세요참 잘했어요수평!쪽';
+    '0123456789①②③④⑤–예측해 보세요정답과 해설덮개를 눌러 들춰 확인하세요참 잘했어요수평!쪽3D로 실험하기';
   return fixed + pages.flatMap((page) => page.blocks.map(blockText)).join(' ');
 }
 

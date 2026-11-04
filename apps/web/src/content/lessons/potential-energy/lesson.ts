@@ -1,11 +1,14 @@
 import { lazy } from 'react';
 import type { Lesson } from '../../../book/types.ts';
+import { potentialEnergyFigure } from './figure.ts';
 import { LESSON_ID, POTENTIAL_QUESTION } from './ids.ts';
 
 /** 2단원 에너지 ① 위치 에너지 */
 export const potentialEnergyLesson: Lesson = {
   id: LESSON_ID,
   music: 'energy',
+  // 3D 실험 때 카메라가 맞출 곳(장치 전체가 화면에 들어오게)
+  focus: { target: [0.5, 0.31, 0.02], frame: [1.2, 1.16] },
   title: '높이에 저장된 에너지',
   textPage: [
     { type: 'eyebrow', text: '2단원 · 에너지' },
@@ -38,10 +41,10 @@ export const potentialEnergyLesson: Lesson = {
   scenePage: [
     { type: 'eyebrow', text: '실험' },
     { type: 'subheading', text: '도르래 실험대' },
-    { type: 'grid' },
+    potentialEnergyFigure,
     {
       type: 'caption',
-      text: '그림 3. 상자를 올리고 내리며 위치 에너지 막대를 살펴보세요. 상자의 질량도 바꿔 볼 수 있어요.',
+      text: '그림 3. 줄을 당겨 상자를 높이 h까지 올렸어요. 2h까지 올리면 위치 에너지는? 그림을 눌러 3D로 실험해 보세요.',
       placement: 'bottom',
     },
   ],

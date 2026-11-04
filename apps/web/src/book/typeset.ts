@@ -1,5 +1,5 @@
 import { COLORS } from './constants.ts';
-import type { PageBlock, PageSpec, Question } from './types.ts';
+import type { FigureDraw, PageBlock, PageSpec, Question } from './types.ts';
 
 /** 글자 폭 측정 함수. 실제로는 canvas의 measureText, 테스트에서는 가짜 함수를 넣는다. */
 export type Measure = (text: string, font: string) => number;
@@ -40,7 +40,8 @@ export type DrawItem =
       color: string;
       lineWidth: number;
       dash?: number[];
-    };
+    }
+  | { kind: 'figure'; rect: Rect; draw: FigureDraw };
 
 /** 페이지 위에서 상호작용하거나 상태에 따라 다르게 그려지는 영역 */
 export type Region =
@@ -65,7 +66,9 @@ export type Region =
       items: DrawItem[];
     }
   | { kind: 'stamp'; questionId: string; x: number; y: number; radius: number }
-  | { kind: 'link'; pageId: string; rect: Rect };
+  | { kind: 'link'; pageId: string; rect: Rect }
+  /** 2D 그림 칸. 누르면 3D 실험으로 펼친다. */
+  | { kind: 'figure'; rect: Rect };
 
 export interface PageLayout {
   items: DrawItem[];
@@ -443,7 +446,8 @@ function layoutPaper(page: PageSpec, options: LayoutOptions): PageLayout {
         y += 22;
         break;
       }
-      case 'grid': {
+      case 'grid':
+      case 'figure': {
         const step = 26;
         const top = y;
         const bottom = Math.min(bottomLimit, top + (block.height ?? bottomLimit - top - 110));
@@ -462,6 +466,11 @@ function layoutPaper(page: PageSpec, options: LayoutOptions): PageLayout {
         }
         for (let i = 0; top + i * step <= bottom + 0.5; i++) {
           line(left, top + i * step, right, top + i * step, i % 5 === 0);
+        }
+        if (block.type === 'figure') {
+          const rect = { x: left, y: top, w: right - left, h: bottom - top };
+          items.push({ kind: 'figure', rect, draw: block.draw });
+          regions.push({ kind: 'figure', rect });
         }
         y = bottom + 20;
         break;

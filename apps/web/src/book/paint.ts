@@ -31,7 +31,7 @@ export function paintPage(
 }
 
 function questionIdOf(region: Region): string | undefined {
-  return region.kind === 'link' ? undefined : region.questionId;
+  return 'questionId' in region ? region.questionId : undefined;
 }
 
 function paintRegion(
@@ -79,7 +79,37 @@ function paintRegion(
       return;
     case 'link':
       return;
+    case 'figure':
+      drawFigureHint(ctx, region.rect);
+      return;
   }
+}
+
+/** 그림 칸 오른쪽 아래의 안내 딱지: 그림을 누르면 3D 실험이 펼쳐진다. */
+function drawFigureHint(ctx: CanvasRenderingContext2D, rect: Rect): void {
+  const label = '3D로 실험하기';
+  ctx.save();
+  ctx.font = `700 24px ${FONT_FAMILY}`;
+  const width = ctx.measureText(label).width + 74;
+  const box = { x: rect.x + rect.w - width - 10, y: rect.y + rect.h - 58, w: width, h: 46 };
+  roundRect(ctx, box, 23);
+  ctx.fillStyle = COLORS.accent;
+  ctx.fill();
+  // 재생 표시(삼각형)
+  const cx = box.x + 30;
+  const cy = box.y + box.h / 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 7, cy - 10);
+  ctx.lineTo(cx + 10, cy);
+  ctx.lineTo(cx - 7, cy + 10);
+  ctx.closePath();
+  ctx.fillStyle = COLORS.paper;
+  ctx.fill();
+  ctx.fillStyle = COLORS.paper;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, box.x + 50, cy + 1);
+  ctx.restore();
 }
 
 function drawItem(ctx: CanvasRenderingContext2D, item: DrawItem): void {
@@ -115,6 +145,12 @@ function drawItem(ctx: CanvasRenderingContext2D, item: DrawItem): void {
       ctx.lineCap = 'round';
       ctx.stroke();
       ctx.setLineDash([]);
+      return;
+    case 'figure':
+      ctx.save();
+      ctx.translate(item.rect.x, item.rect.y);
+      item.draw(ctx, { width: item.rect.w, height: item.rect.h });
+      ctx.restore();
       return;
   }
 }

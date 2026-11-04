@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { layoutPage, wrapText, type Measure, type Region } from './typeset.ts';
 import type { PageSpec } from './types.ts';
 
+/** 그림 칸 시험용: 아무것도 그리지 않는 그림 */
+const drawNothing = () => {};
+
 /** 글꼴 크기만큼 글자마다 폭을 주는 가짜 측정 함수 */
 const measure: Measure = (text, font) => {
   const size = Number(/(\d+)px/.exec(font)?.[1] ?? 10);
@@ -125,6 +128,24 @@ describe('layoutPage', () => {
     );
     const lines = items.filter((item) => item.kind === 'line');
     expect(lines.length).toBeGreaterThan(40);
+    expect(overflow).toBe(false);
+  });
+
+  it('reserves a figure area that the drawing fills and the experiment opens from', () => {
+    const { items, regions, overflow } = layoutPage(
+      {
+        id: 'scene',
+        blocks: [
+          { type: 'subheading', text: '실험' },
+          { type: 'figure', draw: drawNothing, text: '', alt: '그림 설명' },
+          { type: 'caption', text: '그림', placement: 'bottom' },
+        ],
+      },
+      { ...options, side: 'right' },
+    );
+    const figure = items.find((item) => item.kind === 'figure');
+    expect(figure?.kind === 'figure' ? figure.draw : undefined).toBe(drawNothing);
+    expect(regions).toEqual([expect.objectContaining({ kind: 'figure' })]);
     expect(overflow).toBe(false);
   });
 

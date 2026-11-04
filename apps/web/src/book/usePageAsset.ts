@@ -8,7 +8,7 @@ import { TEXTURE_HEIGHT, TEXTURE_WIDTH } from './constants.ts';
 import { FONT_FAMILY, measureText } from './fonts.ts';
 import { paintPage, type AnswerViews } from './paint.ts';
 import { pageNumber } from './structure.ts';
-import { layoutPage, type PageLayout } from './typeset.ts';
+import { layoutPage, type PageLayout, type Rect } from './typeset.ts';
 import type { PageSpec } from './types.ts';
 
 export type PageSide = 'left' | 'right';
@@ -56,6 +56,35 @@ function repaint(
 
 function questionIds(page: PageSpec): string[] {
   return page.blocks.flatMap((block) => (block.type === 'question' ? [block.question.id] : []));
+}
+
+/**
+ * 2D 그림만 뺀 페이지(모눈과 글)를 그린 텍스처. 3D 실험을 하는 동안 그림 칸을 덮어,
+ * 인쇄된 그림이 입체로 일어선 것처럼 보이게 한다. 텍스처는 그림 칸만 보이도록 잘라 둔다.
+ */
+export function createFigureCover(
+  page: PageSpec,
+  side: PageSide,
+): { texture: THREE.CanvasTexture; rect: Rect } | null {
+  const layout = getPageLayout(page, side);
+  const region = layout.regions.find((entry) => entry.kind === 'figure');
+  if (!region || typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = TEXTURE_WIDTH;
+  canvas.height = TEXTURE_HEIGHT;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  paintPage(
+    context,
+    { ...layout, items: layout.items.filter((item) => item.kind !== 'figure'), regions: [] },
+    { style: page.style ?? 'paper', side, seed: page.id, answers: {} },
+  );
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const { rect } = region;
+  texture.repeat.set(rect.w / TEXTURE_WIDTH, rect.h / TEXTURE_HEIGHT);
+  texture.offset.set(rect.x / TEXTURE_WIDTH, 1 - (rect.y + rect.h) / TEXTURE_HEIGHT);
+  return { texture, rect };
 }
 
 /** 이 페이지에 있는 문항들의 현재 답 */

@@ -27,6 +27,7 @@ export function Toolbar({ pages }: { pages: PageSpec[] }) {
       if (event.key === 'ArrowRight' || event.key === 'PageDown') bookStore.getState().next();
       else if (event.key === 'ArrowLeft' || event.key === 'PageUp') bookStore.getState().prev();
       else if (event.key === 'Home') bookStore.getState().goTo(0);
+      else if (event.key === 'Escape') bookStore.getState().stopExperiment();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

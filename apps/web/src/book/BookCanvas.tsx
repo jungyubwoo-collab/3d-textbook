@@ -38,17 +38,23 @@ function InkScale() {
  * 영상 녹화 모드에서 녹화 스크립트가 쓰는 창구(window.__book).
  * advance(초)로 그 시각의 화면을 한 장 그리고, run(이름)으로 단추·덮개 등을 누른다.
  */
+const pixel = new Uint8Array(4);
+
 function CaptureBridge() {
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
   const gl = useThree((state) => state.gl);
   useEffect(() => {
     const api = {
-      /** 그 시각의 화면을 그리고, GPU가 다 그릴 때까지 기다린다(작업이 밀려 쌓이지 않게). */
+      /**
+       * 그 시각의 화면을 그리고, GPU가 다 그릴 때까지 기다린다(작업이 밀려 쌓이지 않게).
+       * finish()는 소프트웨어 렌더러에서 기다려 주지 않으므로 화소 하나를 읽어 끝을 확인한다.
+       */
       advance: (seconds: number) => {
         setCaptureTime(seconds);
         advance(seconds);
-        gl.getContext().finish();
+        const context = gl.getContext();
+        context.readPixels(0, 0, 1, 1, context.RGBA, context.UNSIGNED_BYTE, pixel);
       },
       /** 녹화하는 동안 났어야 할 효과음과 배경음악 바뀜(영상에 소리를 입힐 때 쓴다) */
       sounds: captureSounds,
