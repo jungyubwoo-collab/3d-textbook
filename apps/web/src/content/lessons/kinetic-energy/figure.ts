@@ -46,7 +46,7 @@ function block(ctx: CanvasRenderingContext2D, x: number, y: number, dashed = fal
   }
 }
 
-/** 그림 4. 수레가 나무토막을 밀어낸 거리 d. 속력을 2배로 하면? */
+/** 수레가 나무토막을 밀어낸 거리 d. 속력을 2배로 하면? */
 function draw(ctx: CanvasRenderingContext2D): void {
   formula(ctx, L.formula, [600, 60]);
 

@@ -3,15 +3,13 @@ import type { Lesson } from '../../../book/types.ts';
 import { potentialEnergyFigure } from './figure.ts';
 import { LESSON_ID, POTENTIAL_QUESTION } from './ids.ts';
 
-/** 2단원 에너지 ① 위치 에너지 */
+/** 위치 에너지: 상자 들어 올리기 */
 export const potentialEnergyLesson: Lesson = {
   id: LESSON_ID,
-  music: 'energy',
   // 3D 실험 때 카메라가 맞출 곳(장치 전체가 화면에 들어오게)
   focus: { target: [0.5, 0.31, 0.02], frame: [1.2, 1.16] },
   title: '높이에 저장된 에너지',
   textPage: [
-    { type: 'eyebrow', text: '2단원 · 에너지' },
     { type: 'heading', text: '높이에 저장된 에너지' },
     {
       type: 'paragraph',
@@ -44,7 +42,7 @@ export const potentialEnergyLesson: Lesson = {
     potentialEnergyFigure,
     {
       type: 'caption',
-      text: '그림 3. 줄을 당겨 상자를 높이 h까지 올렸어요. 2h까지 올리면 위치 에너지는? 그림을 눌러 3D로 실험해 보세요.',
+      text: '줄을 당겨 상자를 높이 h까지 올렸어요. 2h까지 올리면 위치 에너지는? 그림을 눌러 3D로 실험해 보세요.',
       placement: 'bottom',
     },
   ],

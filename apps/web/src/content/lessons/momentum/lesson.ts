@@ -3,13 +3,11 @@ import type { Lesson } from '../../../book/types.ts';
 import { momentumFigure } from './figure.ts';
 import { LESSON_ID, MOMENTUM_QUESTION } from './ids.ts';
 
-/** 3단원 운동량 ① 운동량과 충돌 */
+/** 운동량 보존: 충돌 레일 */
 export const momentumLesson: Lesson = {
   id: LESSON_ID,
-  music: 'momentum',
   title: '부딪혀도 지켜지는 양',
   textPage: [
-    { type: 'eyebrow', text: '3단원 · 운동량' },
     { type: 'heading', text: '부딪혀도 지켜지는 양' },
     {
       type: 'paragraph',
@@ -43,7 +41,7 @@ export const momentumLesson: Lesson = {
     momentumFigure,
     {
       type: 'caption',
-      text: '그림 6. 움직이는 수레 A가 서 있는 B에 부딪혀 붙었어요. 함께 움직이는 속력은? 그림을 눌러 3D로 실험해 보세요.',
+      text: '움직이는 수레 A가 서 있는 B에 부딪혀 붙었어요. 함께 움직이는 속력은? 그림을 눌러 3D로 실험해 보세요.',
       placement: 'bottom',
     },
   ],

@@ -33,7 +33,7 @@ function ground(angle: number): Point {
   return [CENTER[0] + RADIUS * Math.sin(a), CENTER[1] - RADIUS * Math.cos(a)];
 }
 
-/** 그림 2. 빠르게 쏠수록 멀리 떨어진다. 초속 7.9 km로 쏘면? */
+/** 빠르게 쏠수록 멀리 떨어진다. 초속 7.9 km로 쏘면? */
 function draw(ctx: CanvasRenderingContext2D): void {
   tag(ctx, L.title, [410, 46], { size: 26 });
 

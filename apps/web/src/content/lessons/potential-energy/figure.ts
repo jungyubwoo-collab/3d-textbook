@@ -27,7 +27,7 @@ const FLOOR = 790;
 /** 1 m가 몇 픽셀인지 */
 const METER = 170;
 
-/** 그림 3. 상자를 높이 h까지 올렸다. 2h까지 올리면 위치 에너지는? */
+/** 상자를 높이 h까지 올렸다. 2h까지 올리면 위치 에너지는? */
 function draw(ctx: CanvasRenderingContext2D): void {
   formula(ctx, L.formula, [410, 46]);
 

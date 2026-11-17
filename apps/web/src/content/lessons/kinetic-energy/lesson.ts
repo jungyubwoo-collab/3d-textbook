@@ -3,15 +3,13 @@ import type { Lesson } from '../../../book/types.ts';
 import { kineticEnergyFigure } from './figure.ts';
 import { KINETIC_QUESTION, LESSON_ID } from './ids.ts';
 
-/** 2단원 에너지 ② 운동 에너지 */
+/** 운동 에너지: 수레가 나무토막을 미는 거리 */
 export const kineticEnergyLesson: Lesson = {
   id: LESSON_ID,
-  music: 'energy',
   // 3D 실험 때 카메라가 맞출 곳(장치 전체가 화면에 들어오게)
   focus: { target: [0.5, 0.1, 0.08], frame: [1.32, 0.86] },
   title: '움직임에 담긴 에너지',
   textPage: [
-    { type: 'eyebrow', text: '2단원 · 에너지' },
     { type: 'heading', text: '움직임에 담긴 에너지' },
     {
       type: 'paragraph',
@@ -44,7 +42,7 @@ export const kineticEnergyLesson: Lesson = {
     kineticEnergyFigure,
     {
       type: 'caption',
-      text: '그림 4. 속력 v로 부딪힌 수레가 나무토막을 d만큼 밀어냈어요. 속력이 2v라면? 그림을 눌러 3D로 실험해 보세요.',
+      text: '속력 v로 부딪힌 수레가 나무토막을 d만큼 밀어냈어요. 속력이 2v라면? 그림을 눌러 3D로 실험해 보세요.',
       placement: 'bottom',
     },
   ],

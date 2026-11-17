@@ -17,7 +17,7 @@ function blockText(block: PageBlock): string {
     case 'list':
       return block.items.join(' ');
     case 'toc':
-      return block.entries.map((entry) => entry.title).join(' ');
+      return block.entries.map((entry) => `${entry.group ?? ''} ${entry.title}`).join(' ');
     case 'question': {
       const { question } = block;
       return [

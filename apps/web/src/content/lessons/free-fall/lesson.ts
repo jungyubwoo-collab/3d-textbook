@@ -3,15 +3,13 @@ import type { Lesson } from '../../../book/types.ts';
 import { freeFallFigure } from './figure.ts';
 import { FREE_FALL_QUESTION, LESSON_ID } from './ids.ts';
 
-/** 1단원 중력 ① 자유 낙하 */
+/** 자유 낙하: 진공 낙하 장치 */
 export const freeFallLesson: Lesson = {
   id: LESSON_ID,
-  music: 'gravity',
   // 3D 실험 때 카메라가 맞출 곳(장치 전체가 화면에 들어오게)
   focus: { target: [0.48, 0.26, 0.04], frame: [1.1, 1.04] },
   title: '모든 것은 함께 떨어진다',
   textPage: [
-    { type: 'eyebrow', text: '1단원 · 중력' },
     { type: 'heading', text: '모든 것은 함께 떨어진다' },
     {
       type: 'paragraph',
@@ -45,7 +43,7 @@ export const freeFallLesson: Lesson = {
     freeFallFigure,
     {
       type: 'caption',
-      text: '그림 1. 공기 속에서는 쇠구슬이 먼저 떨어져요. 공기를 빼면 어떻게 될까요? 그림을 눌러 3D로 실험해 보세요.',
+      text: '공기 속에서는 쇠구슬이 먼저 떨어져요. 공기를 빼면 어떻게 될까요? 그림을 눌러 3D로 실험해 보세요.',
       placement: 'bottom',
     },
   ],

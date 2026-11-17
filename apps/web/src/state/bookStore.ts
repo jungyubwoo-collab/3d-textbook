@@ -15,6 +15,19 @@ export interface Toast {
   message: string;
 }
 
+/** 3D 실험에서 해 볼 탐구 과제 하나 */
+export interface Mission {
+  label: string;
+  done: boolean;
+}
+
+/** 한 실험의 탐구 과제 목록. 장면이 진행 상황을 알려 주면 화면 위 과제판이 보여 준다. */
+export interface MissionBoard {
+  items: Mission[];
+  /** 과제를 모두 마쳤을 때 보여 주는 결론 */
+  conclusion: string;
+}
+
 export interface BookState {
   /** 지금 펼친 면. 0 = 앞표지 */
   spread: number;
@@ -41,6 +54,8 @@ export interface BookState {
   experiment: boolean;
   /** 실험을 접는 동안 미뤄 둔 넘기기. 장면이 다 접히면 이 면으로 넘어간다. */
   pendingSpread: number | null;
+  /** 단원 ID → 그 실험의 탐구 과제. 장면이 떠 있는 동안만 있고 저장하지 않는다. */
+  missions: Record<string, MissionBoard>;
 
   configure: (spreadCount: number) => void;
   goTo: (spread: number) => void;
@@ -64,6 +79,8 @@ export interface BookState {
   stopExperiment: () => void;
   /** 장면이 다 접혔을 때 팝업 슬롯이 불러, 미뤄 둔 넘기기를 한다. */
   flushPending: () => void;
+  /** 장면이 탐구 과제의 진행 상황을 알린다. null이면 지운다(장면이 사라질 때). */
+  setMissions: (lessonId: string, board: MissionBoard | null) => void;
 }
 
 export const answerKey = (lessonId: string, questionId: string): string =>
@@ -84,6 +101,7 @@ export const bookStore = createStore<BookState>()(
       musicMuted: false,
       experiment: false,
       pendingSpread: null,
+      missions: {},
       answers: {},
       toast: null,
       viewResetCount: 0,
@@ -146,6 +164,11 @@ export const bookStore = createStore<BookState>()(
         set({ pendingSpread: null });
         get().goTo(pendingSpread);
       },
+      setMissions: (lessonId, board) =>
+        set((state) => {
+          const { [lessonId]: _removed, ...rest } = state.missions;
+          return { missions: board ? { ...rest, [lessonId]: board } : rest };
+        }),
     }),
     {
       name: '3d-textbook:progress',

@@ -4,6 +4,8 @@ import { pagesOfSpread } from '../book/structure.ts';
 import type { BookDefinition, PageBlock } from '../book/types.ts';
 import { CAPTURE } from '../lib/capture.ts';
 import { bookStore, useBookStore } from '../state/bookStore.ts';
+import { Missions } from './Missions.tsx';
+import { StampTracker } from './StampTracker.tsx';
 import { Toolbar } from './Toolbar.tsx';
 
 /** 3D 화면 위에 겹치는 HTML: 제목, 알림, 조작 막대, 화면 낭독기용 본문 */
@@ -14,9 +16,11 @@ export function Hud({ book }: { book: BookDefinition }) {
         <div className="rounded-2xl bg-paper/80 px-4 py-2.5 shadow-sm ring-1 ring-black/5 backdrop-blur">
           <p className="text-xs font-semibold tracking-wide text-accent">3D 교과서</p>
           <h1 className="text-lg font-extrabold text-ink">{book.title}</h1>
+          <StampTracker book={book} />
         </div>
         <ExperimentExit book={book} />
       </header>
+      <Missions book={book} />
       <ToastMessage />
       <footer className="flex flex-col items-center gap-3">
         <ExperimentStart book={book} />
@@ -123,7 +127,7 @@ function blockToText(block: PageBlock): string[] {
     case 'list':
       return block.items;
     case 'toc':
-      return block.entries.map((entry) => entry.title);
+      return block.entries.flatMap((entry) => [entry.group ?? '', entry.title]);
     case 'question':
       return [
         `예측 문항: ${block.question.prompt}`,

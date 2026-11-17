@@ -19,6 +19,8 @@ export interface TocEntry {
   title: string;
   /** 눌렀을 때 펼칠 페이지 */
   pageId: string;
+  /** 이 항목 위에 쓰는 묶음 이름(대단원). 묶음의 첫 항목에만 준다. */
+  group?: string;
 }
 
 /** 페이지에 인쇄되는 내용 조각. 위에서부터 차례로 배치된다. */
@@ -102,6 +104,16 @@ export interface Lesson {
   focus?: CameraFocus;
   /** 3D 실험 무대의 분위기 색 (PageSpec.mood) */
   mood?: string;
+}
+
+/** 대단원: 같은 주제의 단원 묶음. 책에는 "1단원 · 힘과 운동"처럼 번호와 함께 찍힌다. */
+export interface Chapter {
+  title: string;
+  /** 이 대단원의 배경음악 이름(단원이 따로 정하지 않으면 쓴다) */
+  music?: string;
+  /** 이 대단원의 실험 무대 분위기 색(단원이 따로 정하지 않으면 쓴다) */
+  mood?: string;
+  lessons: Lesson[];
 }
 
 export interface BookDefinition {

@@ -41,7 +41,7 @@ function tube(ctx: CanvasRenderingContext2D, x: number): void {
 const ball = (ctx: CanvasRenderingContext2D, at: Point) =>
   circle(ctx, at, 17, { fill: PEN.steel, width: 2.5 });
 
-/** 그림 1. 공기 속에서는 쇠구슬이 먼저 떨어진다. 공기를 빼면? */
+/** 공기 속에서는 쇠구슬이 먼저 떨어진다. 공기를 빼면? */
 function draw(ctx: CanvasRenderingContext2D): void {
   const air = 250;
   const vacuum = 590;

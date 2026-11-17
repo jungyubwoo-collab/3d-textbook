@@ -47,3 +47,15 @@ describe('3D experiment mode', () => {
     expect(bookStore.getState()).toMatchObject({ experiment: false, pendingSpread: null });
   });
 });
+
+describe('missions', () => {
+  it('keeps the mission board a scene reports and drops it when the scene goes away', () => {
+    const board = { items: [{ label: '한 번 기록하기', done: true }], conclusion: 'a = F ÷ m' };
+    bookStore.getState().setMissions('newton-laws', board);
+    bookStore.getState().setMissions('pulley', { items: [], conclusion: '' });
+    expect(bookStore.getState().missions['newton-laws']).toEqual(board);
+    bookStore.getState().setMissions('newton-laws', null);
+    expect(Object.keys(bookStore.getState().missions)).toEqual(['pulley']);
+    bookStore.getState().setMissions('pulley', null);
+  });
+});

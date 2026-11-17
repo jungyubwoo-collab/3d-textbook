@@ -29,7 +29,7 @@ const LENGTH = 400;
 const PEG_DEPTH = 230;
 const START = (42 * Math.PI) / 180;
 
-/** 그림 5. 줄이 내려오다 못에 걸리는 진자. 추는 반대편에서 어디까지 올라갈까? */
+/** 줄이 내려오다 못에 걸리는 진자. 추는 반대편에서 어디까지 올라갈까? */
 function draw(ctx: CanvasRenderingContext2D): void {
   // 틀
   rect(ctx, 52, 106, 716, 26, { fill: PEN.woodDark, radius: 4 });

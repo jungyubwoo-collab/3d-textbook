@@ -3,15 +3,13 @@ import type { Lesson } from '../../../book/types.ts';
 import { orbitFigure } from './figure.ts';
 import { LESSON_ID, ORBIT_QUESTION } from './ids.ts';
 
-/** 1단원 중력 ② 뉴턴의 대포 */
+/** 원 궤도: 뉴턴의 대포 */
 export const orbitLesson: Lesson = {
   id: LESSON_ID,
-  music: 'gravity',
   // 3D 실험 때 카메라가 맞출 곳(장치 전체가 화면에 들어오게)
   focus: { target: [0.52, 0.25, 0.02], frame: [1.25, 1.04] },
   title: '떨어지면서 도는 달',
   textPage: [
-    { type: 'eyebrow', text: '1단원 · 중력' },
     { type: 'heading', text: '떨어지면서 도는 달' },
     {
       type: 'paragraph',
@@ -45,7 +43,7 @@ export const orbitLesson: Lesson = {
     orbitFigure,
     {
       type: 'caption',
-      text: '그림 2. 빠르게 쏠수록 멀리 떨어져요. 초속 7.9 km로 쏘면 어떻게 될까요? 그림을 눌러 3D로 실험해 보세요.',
+      text: '빠르게 쏠수록 멀리 떨어져요. 초속 7.9 km로 쏘면 어떻게 될까요? 그림을 눌러 3D로 실험해 보세요.',
       placement: 'bottom',
     },
   ],

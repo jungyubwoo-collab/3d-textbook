@@ -375,6 +375,12 @@ function layoutPaper(page: PageSpec, options: LayoutOptions): PageLayout {
         const titleFont = font(600, 28);
         const numberFont = font(500, 24);
         for (const entry of block.entries) {
+          if (entry.group) {
+            // 대단원 이름: 묶음의 첫 항목 위에 작은 글씨로
+            y += 14;
+            text(entry.group, left, y + 15, font(700, 21), COLORS.accent);
+            y += 34;
+          }
           const rowHeight = 64;
           const center = y + rowHeight / 2;
           const number = options.pageNumberOf?.(entry.pageId);

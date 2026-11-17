@@ -3,15 +3,13 @@ import type { Lesson } from '../../../book/types.ts';
 import { pendulumFigure } from './figure.ts';
 import { LESSON_ID, PENDULUM_QUESTION } from './ids.ts';
 
-/** 2단원 에너지 ③ 역학적 에너지 보존 */
+/** 역학적 에너지 보존: 못에 걸리는 진자 */
 export const pendulumLesson: Lesson = {
   id: LESSON_ID,
-  music: 'energy',
   // 3D 실험 때 카메라가 맞출 곳(장치 전체가 화면에 들어오게)
   focus: { target: [0.5, 0.29, 0.02], frame: [1.22, 1.14] },
   title: '사라지지 않는 에너지',
   textPage: [
-    { type: 'eyebrow', text: '2단원 · 에너지' },
     { type: 'heading', text: '사라지지 않는 에너지' },
     {
       type: 'paragraph',
@@ -44,7 +42,7 @@ export const pendulumLesson: Lesson = {
     pendulumFigure,
     {
       type: 'caption',
-      text: '그림 5. 줄이 내려오다 못에 걸리면 추는 어디까지 올라갈까요? 그림을 눌러 3D로 실험해 보세요.',
+      text: '줄이 내려오다 못에 걸리면 추는 어디까지 올라갈까요? 그림을 눌러 3D로 실험해 보세요.',
       placement: 'bottom',
     },
   ],

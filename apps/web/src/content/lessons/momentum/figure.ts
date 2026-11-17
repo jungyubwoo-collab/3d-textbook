@@ -32,7 +32,7 @@ function rail(ctx: CanvasRenderingContext2D, y: number): void {
   hatch(ctx, 30, y + 14, 760, 20);
 }
 
-/** 그림 6. 움직이는 수레 A가 서 있는 수레 B에 부딪혀 붙는다. 함께 움직이는 속력은? */
+/** 움직이는 수레 A가 서 있는 수레 B에 부딪혀 붙는다. 함께 움직이는 속력은? */
 function draw(ctx: CanvasRenderingContext2D): void {
   formula(ctx, L.formula, [600, 60]);
 

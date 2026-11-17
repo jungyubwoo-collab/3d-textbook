@@ -12,6 +12,12 @@ import {
 import type { PageSpec } from '../book/types.ts';
 import { book } from './book.ts';
 
+/** 그 페이지 맨 위에 찍힌 대단원 이름 */
+function eyebrow(pageId: string): string | undefined {
+  const block = book.pages.find((entry) => entry.id === pageId)?.blocks[0];
+  return block?.type === 'eyebrow' ? block.text : undefined;
+}
+
 /** 그 페이지가 있는 펼침면의 배경음악 */
 const music = (pageId: string) => musicOfSpread(book, spreadOfPage(book.pages, pageId));
 
@@ -23,12 +29,13 @@ describe('the sample book', () => {
   it('opens every lesson as one spread: text on the left, 3D scene on the right', () => {
     const lessonIds = book.pages.flatMap((entry) => (entry.scene ? [entry.lessonId] : []));
     expect(lessonIds).toEqual([
+      'newton-laws',
+      'momentum',
       'free-fall',
       'orbit',
       'potential-energy',
       'kinetic-energy',
       'pendulum',
-      'momentum',
     ]);
     for (const id of lessonIds) {
       const { left, right } = pagesOfSpread(book.pages, spreadOfPage(book.pages, `${id}-text`));
@@ -42,13 +49,54 @@ describe('the sample book', () => {
     const questions = book.pages.flatMap((entry) =>
       entry.blocks.flatMap((block) => (block.type === 'question' ? [entry.lessonId] : [])),
     );
-    expect(questions).toHaveLength(6);
-    expect(new Set(questions).size).toBe(6);
+    expect(questions).toHaveLength(7);
+    expect(new Set(questions).size).toBe(7);
+  });
+
+  it('numbers the chapters, the contents and the figures in book order', () => {
+    expect(eyebrow('newton-laws-text')).toBe('1단원 · 힘과 운동');
+    expect(eyebrow('momentum-text')).toBe('1단원 · 힘과 운동');
+    expect(eyebrow('free-fall-text')).toBe('2단원 · 중력');
+    expect(eyebrow('pendulum-text')).toBe('3단원 · 일과 에너지');
+
+    const toc = book.pages.flatMap((entry) => entry.blocks).find((block) => block.type === 'toc');
+    const entries = toc?.type === 'toc' ? toc.entries : [];
+    expect(entries.map((entry) => entry.title.split('.')[0])).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '한눈에 정리',
+    ]);
+    expect(entries.flatMap((entry) => (entry.group ? [entry.group] : []))).toEqual([
+      '1단원 · 힘과 운동',
+      '2단원 · 중력',
+      '3단원 · 일과 에너지',
+      '마무리',
+    ]);
+
+    const captions = book.pages
+      .filter((entry) => entry.scene)
+      .map((entry) => entry.blocks.find((block) => block.type === 'caption'))
+      .map((block) => (block?.type === 'caption' ? block.text.split('.')[0] : undefined));
+    expect(captions).toEqual([
+      '그림 1',
+      '그림 2',
+      '그림 3',
+      '그림 4',
+      '그림 5',
+      '그림 6',
+      '그림 7',
+    ]);
   });
 
   it('plays the unit music on lesson spreads and the theme everywhere else', () => {
     expect(musicOfSpread(book, 0)).toBe('theme');
     expect(music('contents')).toBe('theme');
+    expect(music('newton-laws-text')).toBe('momentum');
     expect(music('free-fall-text')).toBe('gravity');
     expect(music('orbit-text')).toBe('gravity');
     expect(music('potential-energy-text')).toBe('energy');
