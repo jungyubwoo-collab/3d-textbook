@@ -11,6 +11,8 @@ import { Label } from '../../../scene/Label.tsx';
 import { ENERGY_COLORS, TINT } from '../../../scene/palette.ts';
 import { PopUp } from '../../../scene/PopUp.tsx';
 import { SceneButton } from '../../../scene/SceneButton.tsx';
+import { useImpact } from '../../../scene/useImpact.ts';
+import { Glow } from '../../../scene/Glow.tsx';
 import { GRAVITY } from '../physics.ts';
 import {
   bobPosition,
@@ -59,6 +61,7 @@ export function PendulumScene() {
   const lower = useRef<THREE.Mesh>(null);
   const pegMesh = useRef<THREE.Group>(null);
   const trail = useMemo(() => createTrail(TRAIL, TINT.accent), []);
+  const impact = useImpact(8);
   useEffect(() => () => trail.dispose(), [trail]);
   const up = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   const direction = useMemo(() => new THREE.Vector3(), []);
@@ -81,7 +84,10 @@ export function PendulumScene() {
   useFrame((_, delta) => {
     if (swinging) state.current = stepPendulum(state.current, delta / SLOW, config);
     const caught = state.current.side === 'peg';
-    if (swinging && caught && !onPeg.current) playSound('knock', { volume: 0.3 });
+    if (swinging && caught && !onPeg.current) {
+      playSound('knock', { volume: 0.3 });
+      impact.fire(PIVOT[0], PIVOT[1] - PEG_DEPTH * METER, PIVOT[2] + 0.04, 0.06);
+    }
     onPeg.current = caught;
     const position = toScene(bobPosition(state.current, config));
     bob.current?.position.set(...position);
@@ -214,9 +220,11 @@ export function PendulumScene() {
         <mesh ref={bob} material={inkMaterial(TINT.brass)} castShadow>
           <sphereGeometry args={[BOB, 28, 18]} />
           <InkLines edges={false} />
+          <Glow color="#ffc76b" size={0.13} opacity={0.45} />
         </mesh>
       </PopUp>
       <primitive object={trail.line} />
+      <primitive object={impact.group} />
 
       <Bars
         position={[0.4, 0, PIVOT[2]]}

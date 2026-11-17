@@ -116,7 +116,15 @@ export const bookStore = createStore<BookState>()(
           set({ experiment: false, pendingSpread: target === get().spread ? null : target });
           return;
         }
-        if (target !== get().spread) set({ spread: target, settled: false });
+        if (target === get().spread) return;
+        // 도장이 찍히는 도중에 넘기면 효과를 건너뛰고 도장을 페이지에 남긴다.
+        const answers = Object.fromEntries(
+          Object.entries(get().answers).map(([key, answer]) => [
+            key,
+            answer.stampPending ? { ...answer, stampPending: false } : answer,
+          ]),
+        );
+        set({ spread: target, settled: false, answers });
       },
       next: () => get().goTo(get().spread + 1),
       prev: () => get().goTo(get().spread - 1),

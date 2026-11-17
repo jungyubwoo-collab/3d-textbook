@@ -17,6 +17,29 @@
   }
 }
 
+/* '3D로 실험하기' 단추 둘레로 퍼지는 고리 */
+@keyframes pulse-ring {
+  0% {
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.14),
+      0 0 0 0 rgb(196 82 47 / 0.55);
+  }
+  70%,
+  100% {
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.14),
+      0 0 0 14px rgb(196 82 47 / 0);
+  }
+}
+
+/* 영상 녹화 모드(?capture): 화면 시간과 따로 흐르는 CSS 애니메이션은 끈다. */
+.capture *,
+.capture *::before,
+.capture *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 html,
 body,
 #root {

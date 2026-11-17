@@ -61,6 +61,19 @@ export function createImpact(seed = 3): Impact {
   let time = DURATION;
   let size = 0.12;
 
+  /** 지금 시각(time)에 맞게 별과 고리의 크기·밝기를 정한다. */
+  const pose = () => {
+    const pop = easeOutBack(Math.min(1, time / 0.13));
+    const fade = 1 - THREE.MathUtils.smoothstep(time, 0.26, 0.46);
+    star.scale.setScalar(Math.max(0.0001, size * pop));
+    starMaterial.opacity = fade;
+    star.visible = time < DURATION;
+    const spread = Math.min(1, time / 0.42);
+    ring.scale.setScalar(size * (0.5 + 2.1 * spread));
+    ringMaterial.opacity = 0.85 * (1 - spread);
+    ring.visible = spread < 1;
+  };
+
   return {
     group,
     fire(x, y, z, starSize = 0.12) {
@@ -75,20 +88,14 @@ export function createImpact(seed = 3): Impact {
         position.set(x, y, z);
         velocity.set(Math.cos(angle) * speed, 0.1 + next() * 0.5 * speed, Math.sin(angle) * speed);
       });
+      // 터뜨린 바로 그 프레임에 그려져도 크기가 맞도록 여기서도 자세를 잡는다.
+      pose();
       group.visible = true;
     },
     update(delta, pixelHeight, fovDegrees) {
       if (!group.visible) return;
       time += delta;
-      const pop = easeOutBack(Math.min(1, time / 0.13));
-      const fade = 1 - THREE.MathUtils.smoothstep(time, 0.26, 0.46);
-      star.scale.setScalar(Math.max(0.0001, size * pop));
-      starMaterial.opacity = fade;
-      star.visible = time < DURATION;
-      const spread = Math.min(1, time / 0.42);
-      ring.scale.setScalar(size * (0.5 + 2.1 * spread));
-      ringMaterial.opacity = 0.85 * (1 - spread);
-      ring.visible = spread < 1;
+      pose();
       sparks.update(delta, pixelHeight, fovDegrees);
       if (time > DURATION && !sparks.points.visible) group.visible = false;
     },

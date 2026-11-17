@@ -59,3 +59,19 @@ describe('missions', () => {
     bookStore.getState().setMissions('pulley', null);
   });
 });
+
+describe('stamps', () => {
+  it('leaves the stamp on the page when the page turns before the effect ends', () => {
+    bookStore.setState({ spread: 2, spreadCount: 10, experiment: false, pendingSpread: null });
+    const store = bookStore.getState();
+    store.choose('a/q', 'right');
+    expect(store.reveal('a/q', true)).toBe(true);
+    expect(bookStore.getState().answers['a/q']?.stampPending).toBe(true);
+    bookStore.getState().next();
+    expect(bookStore.getState().answers['a/q']).toMatchObject({
+      revealed: true,
+      correct: true,
+      stampPending: false,
+    });
+  });
+});

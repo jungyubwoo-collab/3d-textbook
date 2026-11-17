@@ -9,6 +9,7 @@ import { Label } from '../../../scene/Label.tsx';
 import { TINT } from '../../../scene/palette.ts';
 import { PopUp } from '../../../scene/PopUp.tsx';
 import { SceneButton } from '../../../scene/SceneButton.tsx';
+import { useImpact } from '../../../scene/useImpact.ts';
 import { FRICTION, SPEEDS, kineticEnergy, slideDistance } from './physics.ts';
 import { GRAVITY } from '../physics.ts';
 import { KINETIC_QUESTION } from './ids.ts';
@@ -35,6 +36,7 @@ export function KineticEnergyScene() {
   const cart = useRef<THREE.Group>(null);
   const block = useRef<THREE.Group>(null);
   const spring = useRef<THREE.Group>(null);
+  const impact = useImpact(4);
 
   const contact = BLOCK.start - BLOCK.size / 2 - CART.width / 2;
   const deceleration = FRICTION * GRAVITY;
@@ -51,6 +53,7 @@ export function KineticEnergyScene() {
         time.current = 0;
         setPhase('slide');
         playSound('knock');
+        impact.fire(contact + CART.width / 2, TRACK_TOP + 0.04, Z + 0.05, 0.07 + 0.03 * speed);
       }
     } else if (phase !== 'ready') {
       cartX = contact;
@@ -85,6 +88,7 @@ export function KineticEnergyScene() {
   const energy = kineticEnergy(1, speed);
   return (
     <group>
+      <primitive object={impact.group} />
       {/* 레일 */}
       <PopUp at={0}>
         <mesh

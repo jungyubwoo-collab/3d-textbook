@@ -32,7 +32,7 @@ export function Hud({ book }: { book: BookDefinition }) {
 }
 
 const pill =
-  'pointer-events-auto inline-flex h-11 animate-[toast-in_0.25s_ease-out] items-center gap-2 rounded-full px-5 text-sm font-bold shadow-lg ring-1 ring-black/10 transition';
+  'pointer-events-auto inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-bold shadow-lg ring-1 ring-black/10 transition';
 
 /**
  * 2D 문서에서 3D 실험으로 들어가는 단추(조작 막대 위). 실험이 있는 펼침면에서 책장이 멈춰 있을 때만 보인다.
@@ -47,7 +47,7 @@ function ExperimentStart({ book }: { book: BookDefinition }) {
   return (
     <button
       type="button"
-      className={`${pill} bg-accent text-paper hover:brightness-110`}
+      className={`${pill} animate-[toast-in_0.25s_ease-out,pulse-ring_1.8s_ease-out_0.5s_infinite] bg-accent text-paper hover:brightness-110 motion-reduce:animate-none`}
       onClick={() => void enterExperiment(book)}
     >
       <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
@@ -69,7 +69,7 @@ function ExperimentExit({ book }: { book: BookDefinition }) {
   return (
     <button
       type="button"
-      className={`${pill} bg-paper/95 text-ink hover:bg-paper`}
+      className={`${pill} animate-[toast-in_0.25s_ease-out] bg-paper/95 text-ink hover:bg-paper`}
       onClick={() => bookStore.getState().stopExperiment()}
     >
       <svg

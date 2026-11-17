@@ -10,6 +10,7 @@ import { TINT } from '../../../scene/palette.ts';
 import { PopUp } from '../../../scene/PopUp.tsx';
 import { PushArrow } from '../../../scene/PushArrow.tsx';
 import { SceneButton } from '../../../scene/SceneButton.tsx';
+import { useImpact } from '../../../scene/useImpact.ts';
 import { collide, momentum, type CollisionKind } from './physics.ts';
 import { MOMENTUM_QUESTION } from './ids.ts';
 
@@ -45,6 +46,7 @@ export function MomentumScene() {
   const elapsed = useRef(0);
   const cartA = useRef<THREE.Group>(null);
   const cartB = useRef<THREE.Group>(null);
+  const impact = useImpact(6);
 
   useFrame((_, delta) => {
     const m = motion.current;
@@ -61,6 +63,7 @@ export function MomentumScene() {
         m.a = m.b - WIDTH;
         setAfter([va, vb]);
         playSound('knock', { volume: kind === 'stick' ? 0.8 : 1 });
+        impact.fire(m.b - WIDTH / 2, TRACK_TOP + 0.045, Z + 0.05, kind === 'stick' ? 0.1 : 0.13);
       }
       if (m.b >= STOP) {
         m.b = STOP;
@@ -107,6 +110,7 @@ export function MomentumScene() {
 
   return (
     <group>
+      <primitive object={impact.group} />
       {/* 레일과 양 끝 멈춤판 */}
       <PopUp at={0}>
         <mesh

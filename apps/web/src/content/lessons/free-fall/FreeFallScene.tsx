@@ -9,6 +9,7 @@ import { Label } from '../../../scene/Label.tsx';
 import { TINT } from '../../../scene/palette.ts';
 import { PopUp } from '../../../scene/PopUp.tsx';
 import { SceneButton } from '../../../scene/SceneButton.tsx';
+import { useImpact } from '../../../scene/useImpact.ts';
 import {
   BALL_TERMINAL_SPEED,
   FEATHER_TERMINAL_SPEED,
@@ -63,6 +64,7 @@ export function FreeFallScene() {
   const ball = useRef<THREE.Group>(null);
   const plume = useRef<THREE.Group>(null);
   const needle = useRef<THREE.Group>(null);
+  const impact = useImpact(2);
 
   const ballDrag = air ? BALL_TERMINAL_SPEED : undefined;
   const featherDrag = air ? FEATHER_TERMINAL_SPEED : undefined;
@@ -96,6 +98,8 @@ export function FreeFallScene() {
     if (phase === 'falling' && !landed.current && now.ball <= FLOOR_Y + 1e-6) {
       landed.current = true;
       playSound('knock');
+      // 공기를 뺐으면 깃털도 함께 닿으므로 둘 사이에서 터뜨린다.
+      impact.fire(air ? TUBE.x - 0.024 : TUBE.x, FLOOR_Y, TUBE.z + 0.07, air ? 0.09 : 0.12);
     }
     if (ball.current) ball.current.position.y = now.ball;
     if (plume.current) {
@@ -235,6 +239,8 @@ export function FreeFallScene() {
           </mesh>
         </group>
       </PopUp>
+
+      <primitive object={impact.group} />
 
       {/* 떨어지는 물체: 페이지에서 떠올라 관 위쪽 제자리로 간다. */}
       <PopUp at={0.34} span={0.24}>

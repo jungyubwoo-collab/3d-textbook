@@ -3,12 +3,15 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { book } from '../content/book.ts';
+import { createParticleBurst } from '../fx/particles.ts';
+import { ringTexture, sheenTexture, sparkleTexture } from '../fx/sprites.ts';
+import { viewportOf } from '../fx/viewport.ts';
 import { describeStats, recordPrediction } from '../lib/api.ts';
 import { registerAction } from '../lib/capture.ts';
 import { getLearnerId } from '../lib/learner.ts';
 import { playSound } from '../lib/sound.ts';
 import { answerKey, bookStore, useBookStore } from '../state/bookStore.ts';
-import { COLORS, PAGE_HEIGHT } from './constants.ts';
+import { COLORS, COVER_HEIGHT, COVER_WIDTH, PAGE_HEIGHT, REDUCED_MOTION } from './constants.ts';
 import { drawFlapFace, getStampCanvas, STAMP_ROTATION } from './paint.ts';
 import { pageRectToBook, surfaceHeights, type Stack } from './stack.ts';
 import { enterExperiment } from './experiment.ts';
@@ -29,6 +32,7 @@ export function SpreadOverlays({ stack }: { stack: Stack }) {
   const heights = surfaceHeights(stack, spread);
   return (
     <>
+      {spread === 0 && heights.right !== undefined && <CoverSheen y={heights.right + 0.0012} />}
       {heights.left !== undefined && heights.right !== undefined && (
         <GutterShade y={Math.max(heights.left, heights.right) + 0.0004} />
       )}
@@ -371,7 +375,13 @@ function Flap({
   );
 }
 
-/** "참 잘했어요" 도장이 위에서 쿵 찍히는 효과. 끝나면 페이지 텍스처에 도장을 넘긴다. */
+/** 도장이 찍힌 뒤 축하 효과(색종이, 물결)가 끝날 때까지의 시간(초) */
+const STAMP_DURATION = 1.9;
+
+/**
+ * "참 잘했어요" 도장이 위에서 쿵 찍히는 효과. 닿는 순간 붉은 물결이 퍼지고 색종이가 튀어 오른다.
+ * 끝나면 페이지 텍스처에 도장을 넘긴다(도중에 책장을 넘기면 스토어가 대신 넘긴다).
+ */
 function StampEffect({
   center,
   radius,
@@ -391,6 +401,8 @@ function StampEffect({
   );
   const mesh = useRef<THREE.Mesh>(null);
   const material = useRef<THREE.MeshStandardMaterial>(null);
+  const ring = useRef<THREE.Mesh>(null);
+  const ringMaterial = useRef<THREE.MeshBasicMaterial>(null);
   const elapsed = useRef(0);
   const thumped = useRef(false);
   const finished = useRef(false);
@@ -400,8 +412,27 @@ function StampEffect({
     return result;
   }, []);
   useEffect(() => () => texture.dispose(), [texture]);
+  const confetti = useMemo(
+    () =>
+      createParticleBurst(
+        {
+          count: 80,
+          texture: sparkleTexture(),
+          size: [0.02, 0.055],
+          life: [0.7, 1.5],
+          stagger: 0.07,
+          gravity: 0.95,
+          drag: 1.7,
+          colors: ['#ffd23e', '#ff8f6b', '#fff6cf', COLORS.grade, '#8fd3ff', '#a8e88a'],
+          twinkle: 0.6,
+        },
+        21,
+      ),
+    [],
+  );
+  useEffect(() => () => confetti.dispose(), [confetti]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     elapsed.current += delta;
     const k = THREE.MathUtils.clamp(elapsed.current / 0.3, 0, 1);
     const eased = 1 - (1 - k) ** 3;
@@ -410,31 +441,117 @@ function StampEffect({
       mesh.current.position.y = y + 0.0016 + (1 - eased) * 0.14;
     }
     if (material.current) material.current.opacity = Math.min(1, k * 1.5);
-    // 도장이 종이에 닿는 순간(0.3초에 다 내려온다) 쿵 소리
+    // 도장이 종이에 닿는 순간(0.3초에 다 내려온다) 쿵 소리와 색종이
     if (!thumped.current && elapsed.current >= 0.27) {
       thumped.current = true;
       playSound('stamp');
+      if (!REDUCED_MOTION) {
+        confetti.fire((random, position, velocity) => {
+          const angle = random() * Math.PI * 2;
+          const speed = 0.2 + random() * 0.55;
+          position.set(area.x, y + 0.006, area.z);
+          velocity.set(Math.cos(angle) * speed, 0.3 + random() * 0.65, Math.sin(angle) * speed);
+        });
+      }
     }
-    if (!finished.current && elapsed.current > 0.75) {
+    // 찍힌 자리에서 퍼지는 붉은 물결
+    const spread = THREE.MathUtils.clamp((elapsed.current - 0.27) / 0.55, 0, 1);
+    if (ring.current) {
+      ring.current.visible = !REDUCED_MOTION && spread > 0 && spread < 1;
+      ring.current.scale.setScalar(area.w * (0.5 + 1.5 * (1 - (1 - spread) ** 2)));
+    }
+    if (ringMaterial.current) ringMaterial.current.opacity = 0.7 * (1 - spread);
+    confetti.update(delta, ...viewportOf(state));
+    if (!finished.current && elapsed.current > STAMP_DURATION) {
       finished.current = true;
       onDone();
     }
   });
 
   return (
+    <>
+      <mesh
+        ref={mesh}
+        position={[area.x, y + 0.14, area.z]}
+        rotation={[-Math.PI / 2, 0, -STAMP_ROTATION]}
+      >
+        <planeGeometry args={[area.w, area.h]} />
+        <meshStandardMaterial
+          ref={material}
+          map={texture}
+          transparent
+          opacity={0}
+          depthWrite={false}
+          roughness={0.9}
+        />
+      </mesh>
+      <mesh
+        ref={ring}
+        position={[area.x, y + 0.0012, area.z]}
+        rotation-x={-Math.PI / 2}
+        visible={false}
+        renderOrder={2}
+      >
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial
+          ref={ringMaterial}
+          map={ringTexture()}
+          color={COLORS.grade}
+          transparent
+          opacity={0}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      <primitive object={confetti.points} />
+    </>
+  );
+}
+
+/** 덮여 있는 앞표지 위를 이따금 훑고 지나가는 빛 띠(금박 제목이 반짝인다) */
+function CoverSheen({ y }: { y: number }) {
+  const mesh = useRef<THREE.Mesh>(null);
+  const material = useRef<THREE.MeshBasicMaterial>(null);
+  const time = useRef(0);
+  // 빛 띠 그림을 따로 복제해 이 표지에서만 옮긴다(원본은 다른 곳과 함께 쓴다).
+  const texture = useMemo(() => {
+    const result = sheenTexture().clone();
+    result.wrapS = THREE.ClampToEdgeWrapping;
+    result.wrapT = THREE.ClampToEdgeWrapping;
+    // 띠를 비스듬히 기울인다(판은 표지 크기 그대로 두어 빛이 표지 밖으로 나가지 않는다).
+    result.center.set(0.5, 0.5);
+    result.rotation = 0.55;
+    result.needsUpdate = true;
+    return result;
+  }, []);
+  useEffect(() => () => texture.dispose(), [texture]);
+
+  useFrame((_, delta) => {
+    time.current += delta;
+    // 4.5초마다 1.3초에 걸쳐 왼쪽에서 오른쪽으로 지나간다.
+    const phase = (time.current % 4.5) / 1.3;
+    if (mesh.current) mesh.current.visible = !REDUCED_MOTION && phase < 1;
+    const map = material.current?.map;
+    if (map) map.offset.x = 0.9 - 1.8 * Math.min(1, phase);
+  });
+
+  return (
     <mesh
       ref={mesh}
-      position={[area.x, y + 0.14, area.z]}
-      rotation={[-Math.PI / 2, 0, -STAMP_ROTATION]}
+      position={[COVER_WIDTH / 2, y, 0]}
+      rotation-x={-Math.PI / 2}
+      visible={false}
+      renderOrder={3}
     >
-      <planeGeometry args={[area.w, area.h]} />
-      <meshStandardMaterial
+      <planeGeometry args={[COVER_WIDTH, COVER_HEIGHT]} />
+      <meshBasicMaterial
         ref={material}
         map={texture}
         transparent
-        opacity={0}
+        opacity={0.24}
+        blending={THREE.AdditiveBlending}
         depthWrite={false}
-        roughness={0.9}
+        toneMapped={false}
       />
     </mesh>
   );

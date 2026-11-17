@@ -10,6 +10,9 @@ import { Label } from '../../../scene/Label.tsx';
 import { TINT } from '../../../scene/palette.ts';
 import { PopUp } from '../../../scene/PopUp.tsx';
 import { SceneButton } from '../../../scene/SceneButton.tsx';
+import { useImpact } from '../../../scene/useImpact.ts';
+import { useSparkles } from '../../../scene/useSparkles.ts';
+import { Glow } from '../../../scene/Glow.tsx';
 import { LAUNCH_RADIUS, simulateLaunch } from './physics.ts';
 import { ORBIT_QUESTION } from './ids.ts';
 
@@ -58,6 +61,10 @@ export function OrbitScene() {
   const balls = useRef(new Map<ShotId, THREE.Mesh>());
   /** 땅에 떨어지는 소리를 낸 포탄 */
   const crashed = useRef(new Set<ShotId>());
+  /** 한 바퀴를 다 돌아 축하한 포탄 */
+  const orbited = useRef(new Set<ShotId>());
+  const impact = useImpact(9);
+  const sparkles = useSparkles(70, 13);
 
   useFrame((_, delta) => {
     for (const id of fired) {
@@ -82,6 +89,15 @@ export function OrbitScene() {
       if (reached >= total && launch.outcome === 'crash' && !crashed.current.has(id)) {
         crashed.current.add(id);
         playSound('knock', { volume: 0.7 });
+        const end = launch.scene[total];
+        if (end) impact.fire(end[0], end[1], end[2] + 0.03, 0.085);
+      }
+      if (reached >= total && launch.outcome === 'orbit' && !orbited.current.has(id)) {
+        // 땅에 닿지 않고 한 바퀴를 돌았다.
+        orbited.current.add(id);
+        playSound('sparkle');
+        const home = launch.scene[0];
+        if (home) sparkles.burst(home[0], home[1], home[2] + 0.03, 0.4);
       }
       if (reached >= total && !finished.includes(id)) setFinished((current) => [...current, id]);
     }
@@ -92,6 +108,7 @@ export function OrbitScene() {
     playSound('whoosh');
     clocks.current.set(id, 0);
     crashed.current.delete(id);
+    orbited.current.delete(id);
     setFinished((current) => current.filter((other) => other !== id));
     setFired((current) => (current.includes(id) ? current : [...current, id]));
   };
@@ -99,6 +116,7 @@ export function OrbitScene() {
     if (!allow()) return;
     clocks.current.clear();
     crashed.current.clear();
+    orbited.current.clear();
     setFired([]);
     setFinished([]);
   };
@@ -106,6 +124,8 @@ export function OrbitScene() {
   const top = CENTER[1] + RADIUS;
   return (
     <group>
+      <primitive object={impact.group} />
+      <primitive object={sparkles.points} />
       {/* 지구본 받침 (궤도 뒤쪽에 서 있다) */}
       <PopUp at={0}>
         <mesh
@@ -203,6 +223,7 @@ export function OrbitScene() {
             >
               <sphereGeometry args={[0.011, 16, 12]} />
               <InkLines edges={false} width={1} />
+              <Glow color={shot.color} size={0.075} opacity={0.75} />
             </mesh>
             {finished.includes(shot.id) && (
               <Label
