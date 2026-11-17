@@ -85,6 +85,8 @@ export interface PageSpec {
   music?: string;
   /** 3D 실험 때 카메라가 맞출 곳(없으면 오른쪽 페이지 전체) */
   focus?: CameraFocus;
+  /** 3D 실험 무대의 분위기 색(보조 조명과 화면 가장자리에 감돈다). 없으면 따뜻한 주황 */
+  mood?: string;
 }
 
 /** 단원 하나 = 왼쪽 글 페이지 + 오른쪽 3D 장면 페이지 */
@@ -98,6 +100,8 @@ export interface Lesson {
   music?: string;
   /** 3D 실험 때 카메라가 맞출 곳 (PageSpec.focus) */
   focus?: CameraFocus;
+  /** 3D 실험 무대의 분위기 색 (PageSpec.mood) */
+  mood?: string;
 }
 
 export interface BookDefinition {

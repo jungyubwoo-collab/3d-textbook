@@ -15,6 +15,8 @@ import { bookStore } from '../state/bookStore.ts';
 import { Book } from './Book.tsx';
 import { CameraRig } from './CameraRig.tsx';
 import { Desk } from './Desk.tsx';
+import { DeskProps } from './DeskProps.tsx';
+import { StageLights, Vignette } from './Stage.tsx';
 import { collectText, loadFonts } from './fonts.ts';
 
 /** 페이지를 그리기 전에 글꼴을 받는다(한 번만). */
@@ -79,25 +81,6 @@ function CaptureBridge() {
   return null;
 }
 
-function Lights() {
-  return (
-    <>
-      <hemisphereLight args={['#fff8ec', '#9c8a70', 1.15]} />
-      {/* 왼쪽 위 창문에서 들어오는 빛 */}
-      <directionalLight
-        position={[-2.4, 4.4, 1.6]}
-        intensity={2.1}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.015}
-      >
-        <orthographicCamera attach="shadow-camera" args={[-2.2, 2.2, 2.2, -2.2, 0.5, 12]} />
-      </directionalLight>
-    </>
-  );
-}
-
 export function BookCanvas() {
   return (
     <div className="absolute inset-0" role="img" aria-label="책상 위에 놓인 3D 교과서">
@@ -114,14 +97,16 @@ export function BookCanvas() {
         <fog attach="fog" args={['#d9cfbf', 7, 16]} />
         <InkScale />
         {CAPTURE && <CaptureBridge />}
-        <Lights />
+        <StageLights />
         <Desk />
+        <DeskProps />
         <Suspense fallback={null}>
           <WhenFontsReady>
             <Book />
           </WhenFontsReady>
         </Suspense>
         <CameraRig />
+        <Vignette />
       </Canvas>
     </div>
   );

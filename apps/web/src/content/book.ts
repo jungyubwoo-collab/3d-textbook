@@ -18,6 +18,7 @@ function lessonPages(lesson: Lesson): [PageSpec, PageSpec] {
       scene: lesson.Scene,
       ...music,
       ...(lesson.focus ? { focus: lesson.focus } : {}),
+      ...(lesson.mood ? { mood: lesson.mood } : {}),
     },
   ];
 }

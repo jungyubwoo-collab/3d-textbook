@@ -24,9 +24,9 @@ import {
 } from './constants.ts';
 import type { LeafRig } from './leafRig.ts';
 import { SpreadOverlays } from './PageOverlays.tsx';
-import { createFigureCover } from './usePageAsset.ts';
+import { RevealFx } from './RevealFx.tsx';
 import { BookRuntimeContext, SceneContext, useBookRuntime, type SceneRuntime } from './runtime.ts';
-import { computeStack, curlWeights, easeInOutCubic, pageRectToBook, type Stack } from './stack.ts';
+import { computeStack, curlWeights, easeInOutCubic, type Stack } from './stack.ts';
 import { toLeaves, type Leaf } from './structure.ts';
 import type { PageSpec } from './types.ts';
 
@@ -430,7 +430,7 @@ const FOLD_DURATION = REDUCED_MOTION ? 0.3 : 1.4;
 /**
  * 오른쪽 페이지의 팝업 장면. 평소에는 2D 문서(페이지에 인쇄된 교과서 그림)로만 보인다.
  * 3D 실험을 켜면(bookStore.experiment) 등장 시간(reveal)이 0 → 1로 흐르며
- * 그림 칸이 빈 모눈으로 덮이고, 장치가 부분마다 차례로 일어서고, 아래부터 색이 번진다.
+ * 빛이 번져 그림을 지우고(RevealFx), 장치가 부분마다 차례로 일어서고, 아래부터 색이 번진다.
  * 실험을 끄면 거꾸로 접혀(나중에 선 것부터 눕고 색이 빠진다) 다시 인쇄된 그림이 된다.
  */
 function PopupSlot({ page, spreadIndex, y }: { page: PageSpec; spreadIndex: number; y: number }) {
@@ -486,6 +486,8 @@ function PopupSlot({ page, spreadIndex, y }: { page: PageSpec; spreadIndex: numb
     if (group.current.visible) {
       const fill = smoothstep(reveal.current, 0.2, 0.95);
       inkUniforms.uFillY.value = lerp(y - 0.03, y + SCENE_TOP, fill);
+      // 색이 차오르는 동안에만 경계가 금빛으로 빛난다.
+      inkUniforms.uFillGlow.value = Math.min(1, Math.sin(fill * Math.PI) * 1.8);
     }
   });
 
@@ -497,7 +499,7 @@ function PopupSlot({ page, spreadIndex, y }: { page: PageSpec; spreadIndex: numb
   if (!Scene) return null;
   return (
     <>
-      <FigureCover page={page} y={y} reveal={reveal} />
+      <RevealFx page={page} y={y} reveal={reveal} />
       <group position={[PAGE_WIDTH / 2, y, 0]}>
         <group ref={group}>
           <SceneContext value={scene}>
@@ -508,50 +510,5 @@ function PopupSlot({ page, spreadIndex, y }: { page: PageSpec; spreadIndex: numb
         </group>
       </group>
     </>
-  );
-}
-
-/**
- * 3D 실험을 하는 동안 2D 그림 칸을 빈 모눈 종이로 덮는다.
- * 인쇄된 그림이 사라지고 그 자리에서 장치가 일어서는 것처럼 보인다.
- */
-function FigureCover({
-  page,
-  y,
-  reveal,
-}: {
-  page: PageSpec;
-  y: number;
-  reveal: RefObject<number>;
-}) {
-  const cover = useMemo(() => createFigureCover(page, 'right'), [page]);
-  useEffect(() => () => cover?.texture.dispose(), [cover]);
-  const mesh = useRef<THREE.Mesh>(null);
-  const material = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(() => {
-    const k = Math.min(1, reveal.current / 0.12);
-    if (mesh.current) mesh.current.visible = k > 0;
-    if (material.current) material.current.opacity = k;
-  });
-  if (!cover) return null;
-  const area = pageRectToBook(cover.rect, 'right');
-  return (
-    <mesh
-      ref={mesh}
-      position={[area.x, y + 0.0008, area.z]}
-      rotation-x={-Math.PI / 2}
-      visible={false}
-      receiveShadow
-    >
-      <planeGeometry args={[area.w, area.h]} />
-      <meshStandardMaterial
-        ref={material}
-        map={cover.texture}
-        transparent
-        opacity={0}
-        roughness={0.92}
-        depthWrite={false}
-      />
-    </mesh>
   );
 }

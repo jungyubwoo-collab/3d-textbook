@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { mulberry32 } from './paint.ts';
+import { mulberry32 } from '../lib/random.ts';
 
 /** 나뭇결 책상 텍스처를 코드로 그린다(이미지 파일 없이). */
 function createWoodTexture(): THREE.CanvasTexture {
