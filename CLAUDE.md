@@ -21,6 +21,7 @@
   - `Stage.tsx` 실험 무대 조명(3D 실험을 켜면 방이 어두워지고 스탠드가 비춘다. 세기는 `stageState.ts`의 `stage.level`)과 화면 가장자리 어둠. `DeskProps.tsx` 스탠드·머그잔·연필 같은 책상 소품. `RevealFx.tsx` 그림이 3D로 바뀌는 순간의 효과(번지는 금빛 원, 물결, 빛기둥, 반짝이).
   - `leafRig.ts` 뼈대가 든 종이 메시. `usePageAsset.ts` 페이지 텍스처(가까운 장만 생성).
 - `apps/web/src/content/` — 책 내용 "움직임의 법칙". `book.ts`의 `chapters`가 대단원과 단원 순서(대단원 번호·차례·그림 번호·배경음악·분위기 색을 여기서 매긴다), `lessons/<id>/`가 단원 하나: `ids.ts`(단원·문항 ID), `lesson.ts`(글 블록 + 장면 페이지 블록), `physics.ts`(+테스트), 장면 컴포넌트. 탐구 실험(`newton-laws`, `pulley`)은 칠판·자 그림을 `board.ts`에 둔다.
+- `apps/web/src/content/labs/` — 부록 '나의 실험실'(물리·화학). `labs.ts` 공간 GLB와 스케치 주소, `room.ts`(+테스트) GLB를 바닥·벽 / 가구 / 모델 자리(`ENV_`, `PRP_`, `SLOT_` 이름)로 풀기, `LabScene.tsx` 공간을 잉크 재질로 세우고 허브 모델을 자리에 놓기, `models.ts` 에셋 허브에서 골라 온 모델 목록(`public/models/hub/<id>.glb`), `lessons.ts` 책에 싣는 펼침면. 공간은 힉스필드 3D Jutsu에서 만든다(프로젝트 이름 "나의 물리 실험실 (3D 교과서)", "나의 화학 실험실 (3D 교과서)").
 - `apps/web/src/book/experiment.ts` — 펼침면의 3D 실험 찾기(`experimentOfSpread`)와 켜기(`enterExperiment`, 예측을 먼저 골라야 켜진다). 상태는 `bookStore`의 `experiment`(2D 문서 / 3D 실험)와 `pendingSpread`(실험 중에 넘기면 접은 뒤 넘어갈 면).
 - `apps/web/src/figure/kit.ts` — 2D 교과서 그림 도구(820 × 940 설계 좌표, `fitFigure`). 단원마다 `lessons/<id>/figure.ts`가 장면 페이지의 `figure` 블록을 만든다.
 - `apps/web/src/scene/` — 장면 부품. `PopUp`(등장 시간 `at`에 솟아오름, `rise`/`grow`/`hinge`), `SceneButton`, `Bars`, `Label`(`tag`로 색 딱지), `PushArrow`, `useLessonGate`(예측 전 조작 잠금), `createRope`(매 프레임 모양이 바뀌는 줄), `createDots`(같은 점 여러 개), `useImpact`(충돌 별), `useSparkles`(축하 반짝이), `Glow`(물체 둘레의 빛).
@@ -46,6 +47,8 @@
 - 장면 조작 처리기는 첫 줄에서 `if (!allow()) return;`(`useLessonGate(문항ID)`). 장면 단추는 `SceneButton`을 쓰면 녹화용 동작(`<단원>:<id>`)으로도 등록된다.
 - Oxlint의 React Compiler 규칙(`react/immutability`)은 훅이 돌려준 값을 고치는 것을 막는다. 매 프레임 고치는 버퍼는 메서드를 가진 객체(예: `createRope()`, `createParticleBurst()`)나 ref로 감싼다. 셰이더 유니폼과 텍스처는 재질 ref를 거쳐 고친다(`setUniform(material.current, …)`, `material.current.map`).
 - 대단원 이름("1단원 · …")과 그림 번호("그림 N.")는 `content/book.ts`가 붙인다. 단원의 `lesson.ts`에는 쓰지 않는다.
+- 그림 블록이 이미지 파일을 쓰면 `images`에 주소를 적는다(책을 그리기 전에 `figure/images.ts`가 미리 받는다). 그림을 눌렀을 때 하는 일이 실험이 아니면 `action`에 이름을 적는다(예: '3D로 둘러보기'). 책 밖으로 나가는 링크는 `link` 블록.
+- 실험실 공간 GLB를 다시 만들 때는 맨 위 노드 이름을 지킨다: `ENV_`(바닥·벽), `PRP_`(가구 한 묶음), `SLOT_`(모델 자리, 빈 노드). 재질은 색만 쓰고(잉크 재질로 다시 칠한다) 반투명 재질은 유리로 그린다.
 - 조건을 바꿔 가며 하는 실험은 탐구 과제를 둔다: 장면이 `bookStore.getState().setMissions(LESSON_ID, { items, conclusion })`으로 알리고, 장면이 사라질 때 `null`로 지운다.
 - 충돌·착지에는 `impact.fire(x, y, z, 크기)`, 축하에는 `sparkles.burst(x, y, z)`. 장면에 `<primitive object={impact.group} />`, `<primitive object={sparkles.points} />`를 넣어야 보인다.
 
