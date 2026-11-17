@@ -2,10 +2,36 @@ import { lazy, type ComponentType } from 'react';
 import type { Lesson, PageBlock } from '../../book/types.ts';
 import { drawSketch } from '../../figure/images.ts';
 import { LABS, type LabConfig } from './labs.ts';
-import { HUB, modelsOf } from './models.ts';
+import { HUB, modelsOf, type HubModel } from './models.ts';
+import { placeOf } from './room.ts';
 
-/** 글 페이지에 이름을 적는 모델의 최대 개수(넘으면 "외 N개"로 줄인다) */
-const LISTED = 8;
+/** 글 페이지에서 모델을 묶어 적는 자리 이름(이 순서로 적는다) */
+const PLACES: [place: string, label: string][] = [
+  ['island', '가운데 실험대'],
+  ['shelf', '선반'],
+  ['back', '뒤 실험대'],
+  ['left', '왼쪽 실험대'],
+  ['cart', '수레'],
+  ['floor', '바닥'],
+];
+
+/** 모델 이름을 놓인 자리별로 묶는다: "선반: 용수철저울, 고리 추, …" */
+export function modelsByPlace(models: HubModel[]): string[] {
+  const known = new Set(PLACES.map(([place]) => place));
+  const groups = PLACES.map(([place, label]) => ({
+    label,
+    names: models.filter((model) => placeOf(model.slot ?? '') === place).map((model) => model.name),
+  }));
+  groups.push({
+    label: '그 밖에',
+    names: models
+      .filter((model) => !known.has(placeOf(model.slot ?? '')))
+      .map((model) => model.name),
+  });
+  return groups.flatMap(({ label, names }) =>
+    names.length > 0 ? [`${label}: ${names.join(', ')}`] : [],
+  );
+}
 
 /** 실험실 하나를 책의 한 펼침면(왼쪽 글 + 오른쪽 스케치·3D 공간)으로 만든다. */
 function labLesson(
@@ -17,8 +43,6 @@ function labLesson(
   Scene: ComponentType,
 ): Lesson {
   const models = modelsOf(lab.id);
-  const names = models.slice(0, LISTED).map((model) => model.name);
-  if (models.length > LISTED) names.push(`… 외 ${models.length - LISTED}개`);
   const featured: PageBlock[] =
     models.length > 0
       ? [
@@ -26,7 +50,7 @@ function labLesson(
             type: 'paragraph',
             text: `실험 기구와 장치의 3D 모델이 에셋 허브에 ${HUB.total} 모여 있어요. 이 실험실에는 그 가운데 주요 모델 ${models.length}개를 골라 놓았어요. 모델을 누르면 앞의 받침대에서 크게 돌려 볼 수 있어요.`,
           },
-          { type: 'list', items: names },
+          { type: 'list', items: modelsByPlace(models) },
         ]
       : [
           {
@@ -54,7 +78,7 @@ function labLesson(
         type: 'figure',
         draw: (ctx, size) => drawSketch(ctx, lab.sketch, size, 4),
         text: '',
-        alt: `${lab.title}을 선으로 그린 스케치. 칠판과 선반이 있는 뒷벽, 창문이 있는 왼쪽 벽, 가운데 실험대와 의자, 벽 쪽 실험대, 바퀴 달린 수레가 보인다.`,
+        alt: `${lab.title}을 선으로 그린 스케치. 칠판과 선반이 있는 뒷벽, 창문이 있는 왼쪽 벽, 가운데 실험대와 의자, 벽 쪽 실험대, 바퀴 달린 수레가 보이고, 실험대와 선반 위에는 실험 기구가 놓여 있다.`,
         images: [lab.sketch],
         action: '3D로 둘러보기',
         // 스케치 비율(4:3)에 맞춘 높이. 아래에 설명 글이 들어간다.
@@ -62,7 +86,7 @@ function labLesson(
       },
       {
         type: 'paragraph',
-        text: '선으로 그린 스케치는 공간의 설계도예요. 3D로 일으켜 세우면 선이 면이 되고, 색과 그림자가 입혀져요.',
+        text: '선으로 그린 스케치는 공간의 설계도예요. 3D로 일으켜 세우면 선이 면이 되고, 색과 그림자가 입혀져요. 선으로만 그려 둔 실험 기구도 제 색을 입고 자리에 놓여요.',
       },
       { type: 'list', items: tour },
       {

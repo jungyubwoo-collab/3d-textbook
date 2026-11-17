@@ -13,7 +13,15 @@ import { PopUp } from '../../scene/PopUp.tsx';
 import { SceneButton } from '../../scene/SceneButton.tsx';
 import { LABS, type LabConfig } from './labs.ts';
 import { modelsOf, modelUrl, type HubModel } from './models.ts';
-import { assignSlots, fitModel, parseRoom, type RoomUnit } from './room.ts';
+import {
+  assignSlots,
+  cubeSpace,
+  fitModel,
+  parseRoom,
+  slotSpace,
+  type RoomUnit,
+  type SlotSpace,
+} from './room.ts';
 
 /** 방 1 m가 장면에서 몇 단위인지(방 가로 5.7 m가 페이지 폭에 들어온다) */
 const SCALE = 0.15;
@@ -21,11 +29,10 @@ const SCALE = 0.15;
 const ROOM_Z = -0.14;
 /** 바닥판 두께(m). 바닥판이 페이지 위에 얹히게 그만큼 올린다. */
 const FLOOR = 0.12;
-/** 방 안에 놓는 모델의 기본 크기(가장 긴 변, m). 작은 기구도 보이게 실제보다 크게 둔다. */
-const MODEL_SIZE = 0.5;
 /** 고른 모델을 크게 돌려 보는 받침대의 자리와 그 위 모델의 크기(장면 단위) */
-const STAND: [number, number, number] = [-0.3, 0, 0.28];
+const STAND: [number, number, number] = [-0.3, 0, 0.3];
 const STAND_SIZE = 0.2;
+const STAND_SPACE = cubeSpace(STAND_SIZE);
 
 /** 가구 한 묶음: 바닥·벽이 먼저 일어서고 가구가 구석부터 차례로 일어선다. */
 function RoomUnitView({ unit }: { unit: RoomUnit }) {
@@ -99,34 +106,59 @@ function prepare(scene: THREE.Object3D, environment: THREE.Texture): void {
   });
 }
 
-/** 모델을 size 크기로 맞춰 원점 위에 세운다. */
+/** 고른 모델 위에 떠서 까딱이는 표시(방 좌표 m) */
+function Marker({ y }: { y: number }) {
+  const cone = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (cone.current) cone.current.position.y = y + 0.2 + 0.05 * Math.sin(clock.elapsedTime * 4);
+  });
+  return (
+    <mesh ref={cone} position-y={y + 0.2} rotation-x={Math.PI}>
+      <coneGeometry args={[0.085, 0.2, 20]} />
+      <meshBasicMaterial color={COLORS.accent} toneMapped={false} />
+    </mesh>
+  );
+}
+
+/**
+ * 모델을 공간에 맞춰 원점 위에 세운다. 작은 기구도 잘 보이게 실제 크기가 아니라
+ * 자리가 내어 주는 공간에 꼭 맞게 키운다.
+ */
 function ModelBody({
   model,
-  size,
+  space,
+  turn,
   environment,
+  marked = false,
 }: {
   model: HubModel;
-  size: number;
+  space: Omit<SlotSpace, 'turn'>;
+  turn: number;
   environment: THREE.Texture;
+  marked?: boolean;
 }) {
   const gltf = useGLTF(modelUrl(model));
   const fit = useMemo(() => {
     prepare(gltf.scene, environment);
     gltf.scene.updateMatrixWorld(true);
-    return fitModel(new THREE.Box3().setFromObject(gltf.scene), size);
-  }, [gltf, environment, size]);
+    return fitModel(new THREE.Box3().setFromObject(gltf.scene), space, turn);
+  }, [gltf, environment, space, turn]);
   return (
-    <group rotation-y={THREE.MathUtils.degToRad(model.turn ?? 0)}>
-      <group position={fit.offset} scale={fit.scale}>
-        <Clone object={gltf.scene} />
+    <>
+      <group rotation-y={THREE.MathUtils.degToRad(turn)}>
+        <group position={fit.offset} scale={fit.scale}>
+          <Clone object={gltf.scene} />
+        </group>
       </group>
-    </group>
+      {marked && <Marker y={fit.height} />}
+    </>
   );
 }
 
 /** 실험대나 선반 위에 놓인 모델. 누르면 받침대에서 크게 볼 수 있다. */
 function PlacedModel({
   model,
+  slot,
   position,
   at,
   selected,
@@ -134,6 +166,8 @@ function PlacedModel({
   onSelect,
 }: {
   model: HubModel;
+  /** 놓인 자리의 이름(SLOT_…) */
+  slot: string;
   position: THREE.Vector3;
   at: number;
   selected: boolean;
@@ -142,6 +176,11 @@ function PlacedModel({
 }) {
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
+  const place = slotSpace(slot);
+  const space = useMemo(
+    () => (model.size === undefined ? place : cubeSpace(model.size)),
+    [model.size, place],
+  );
   return (
     <PopUp at={at} mode="grow" span={0.16} position={[position.x, position.y + FLOOR, position.z]}>
       <group
@@ -157,15 +196,15 @@ function PlacedModel({
       >
         <Safe>
           <Suspense fallback={null}>
-            <ModelBody model={model} size={model.size ?? MODEL_SIZE} environment={environment} />
+            <ModelBody
+              model={model}
+              space={space}
+              turn={model.turn ?? place.turn}
+              environment={environment}
+              marked={selected}
+            />
           </Suspense>
         </Safe>
-        {selected && (
-          <mesh rotation-x={-Math.PI / 2} position-y={0.012}>
-            <ringGeometry args={[0.3, 0.36, 40]} />
-            <meshBasicMaterial color={COLORS.accent} toneMapped={false} />
-          </mesh>
-        )}
       </group>
     </PopUp>
   );
@@ -195,7 +234,12 @@ function Showcase({
         <group ref={turntable} position-y={0.026}>
           <Safe key={model.id}>
             <Suspense fallback={null}>
-              <ModelBody model={model} size={STAND_SIZE} environment={environment} />
+              <ModelBody
+                model={model}
+                space={STAND_SPACE}
+                turn={model.turn ?? 0}
+                environment={environment}
+              />
             </Suspense>
           </Safe>
         </group>
@@ -204,9 +248,9 @@ function Showcase({
         at={0.76}
         mode="grow"
         span={0.16}
-        position={[STAND[0] + 0.02, STAND_SIZE + 0.1, STAND[2]]}
+        position={[STAND[0] + 0.02, STAND_SIZE + 0.075, STAND[2]]}
       >
-        <Label text={caption} height={0.044} />
+        <Label text={caption} height={0.04} />
       </PopUp>
     </>
   );
@@ -230,12 +274,14 @@ function Models({ models, slots }: { models: HubModel[]; slots: Map<string, THRE
     <>
       <group position={[0, 0, ROOM_Z]} scale={SCALE}>
         {shown.map((model, index) => {
-          const position = slots.get(placed.get(model.id) ?? '');
+          const slot = placed.get(model.id) ?? '';
+          const position = slots.get(slot);
           if (!position) return null;
           return (
             <PlacedModel
               key={model.id}
               model={model}
+              slot={slot}
               position={position}
               at={0.58 + (0.2 * index) / Math.max(1, shown.length)}
               selected={model === current}
@@ -259,7 +305,7 @@ function Models({ models, slots }: { models: HubModel[]; slots: Map<string, THRE
           <SceneButton
             id="previous"
             label="이전 모델"
-            position={[0.03, 0, 0.3]}
+            position={[-0.05, 0, 0.24]}
             width={0.2}
             onPress={step(-1)}
             at={0.82}
@@ -267,7 +313,7 @@ function Models({ models, slots }: { models: HubModel[]; slots: Map<string, THRE
           <SceneButton
             id="next"
             label="다음 모델"
-            position={[0.26, 0, 0.3]}
+            position={[0.17, 0, 0.24]}
             width={0.2}
             onPress={step(1)}
             at={0.85}

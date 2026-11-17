@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { assignSlots, fitModel, parseRoom } from './room.ts';
+import { assignSlots, cubeSpace, fitModel, parseRoom, slotSpace } from './room.ts';
 
 function mesh(name: string, color: string, size = 1, opacity = 1): THREE.Mesh {
   const result = new THREE.Mesh(
@@ -101,16 +101,47 @@ describe('assignSlots', () => {
   });
 });
 
+describe('slotSpace', () => {
+  it('gives each kind of place its own room', () => {
+    expect(slotSpace('SLOT_shelf_3').h).toBeLessThan(slotSpace('SLOT_island_1').h);
+    expect(slotSpace('SLOT_floor_1').h).toBeGreaterThan(1);
+  });
+
+  it('turns models on the left bench to face the room', () => {
+    expect(slotSpace('SLOT_left_2').turn).toBe(90);
+    expect(slotSpace('SLOT_island_2').turn).toBe(0);
+  });
+
+  it('falls back to a small cube for unknown places', () => {
+    expect(slotSpace('SLOT_window_1')).toMatchObject({ w: 0.5, h: 0.5, d: 0.5, turn: 0 });
+  });
+});
+
 describe('fitModel', () => {
-  it('scales the longest side to the size and stands the model on the origin', () => {
-    const box = new THREE.Box3(new THREE.Vector3(2, 10, -4), new THREE.Vector3(4, 14, 0));
-    const { scale, offset } = fitModel(box, 0.5);
+  const box = new THREE.Box3(new THREE.Vector3(2, 10, -4), new THREE.Vector3(4, 14, 0));
+
+  it('scales the longest side to a cube and stands the model on the origin', () => {
+    const { scale, offset, height } = fitModel(box, cubeSpace(0.5));
     expect(scale).toBeCloseTo(0.125);
     // 가운데 (3, ·, -2)가 원점으로, 바닥(y = 10)이 0으로
     expect(offset.toArray()).toEqual([-0.375, -1.25, 0.25]);
+    expect(height).toBeCloseTo(0.5);
+  });
+
+  it('fits the tightest side of the space', () => {
+    // 가로 2 · 높이 4 · 깊이 4인 모델: 깊이 0.4가 가장 빠듯하다.
+    expect(fitModel(box, { w: 1, h: 1, d: 0.4 }).scale).toBeCloseTo(0.1);
+    expect(fitModel(box, { w: 0.1, h: 1, d: 1 }).scale).toBeCloseTo(0.05);
+  });
+
+  it('measures width and depth after the turn', () => {
+    // 90도 돌리면 깊이 4가 가로가 된다.
+    expect(fitModel(box, { w: 1, h: 10, d: 10 }, 90).scale).toBeCloseTo(0.25);
+    expect(fitModel(box, { w: 1, h: 10, d: 10 }, 0).scale).toBeCloseTo(0.5);
   });
 
   it('leaves an empty model alone', () => {
-    expect(fitModel(new THREE.Box3(new THREE.Vector3(), new THREE.Vector3()), 0.5).scale).toBe(1);
+    const empty = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+    expect(fitModel(empty, cubeSpace(0.5)).scale).toBe(1);
   });
 });
