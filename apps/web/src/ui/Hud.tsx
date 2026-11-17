@@ -43,7 +43,8 @@ function ExperimentStart({ book }: { book: BookDefinition }) {
   const settled = useBookStore((state) => state.settled);
   const experiment = useBookStore((state) => state.experiment);
   const pending = useBookStore((state) => state.pendingSpread);
-  if (experiment || !settled || pending !== null || !experimentOfSpread(book, spread)) return null;
+  const found = experimentOfSpread(book, spread);
+  if (experiment || !settled || pending !== null || !found) return null;
   return (
     <button
       type="button"
@@ -53,7 +54,7 @@ function ExperimentStart({ book }: { book: BookDefinition }) {
       <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
         <path d="M8 5.5v13l10.5-6.5z" />
       </svg>
-      3D로 실험하기
+      {found.label}
     </button>
   );
 }
@@ -137,6 +138,8 @@ function blockToText(block: PageBlock): string[] {
       return block.rows.map(([label, value]) => `${label}: ${value}`);
     case 'figure':
       return [`그림: ${block.alt}`];
+    case 'link':
+      return [`${block.text} (${block.href})`];
     case 'lines':
     case 'grid':
     case 'spacer':

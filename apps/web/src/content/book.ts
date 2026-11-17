@@ -1,4 +1,5 @@
 import type { BookDefinition, Chapter, Lesson, PageSpec } from '../book/types.ts';
+import { chemistryLabLesson, physicsLabLesson } from './labs/lessons.ts';
 import { freeFallLesson } from './lessons/free-fall/lesson.ts';
 import { kineticEnergyLesson } from './lessons/kinetic-energy/lesson.ts';
 import { momentumLesson } from './lessons/momentum/lesson.ts';
@@ -33,10 +34,20 @@ const chapters: Chapter[] = [
   },
 ];
 
+/**
+ * 부록: 책 맨 끝(정리와 메모 뒤)에 싣는다. 선 스케치가 3D 공간으로 일어서는 '나의 실험실'.
+ * 공간은 힉스필드 3D Jutsu에서 만들었고, 에셋 허브의 주요 모델을 놓는다(content/labs).
+ */
+const appendix: Chapter = {
+  title: '나의 실험실',
+  label: '부록',
+  lessons: [physicsLabLesson, chemistryLabLesson],
+};
+
 interface Placed {
   lesson: Lesson;
   chapter: Chapter;
-  /** 페이지 맨 위에 찍는 대단원 이름 ("1단원 · 힘과 운동") */
+  /** 페이지 맨 위에 찍는 대단원 이름 ("1단원 · 힘과 운동", "부록 · 나의 실험실") */
   label: string;
   /** 책 전체에서 몇 번째 단원인지(1부터). 차례 번호이자 그림 번호 */
   number: number;
@@ -44,16 +55,21 @@ interface Placed {
   first: boolean;
 }
 
-const placed: Placed[] = chapters
-  .flatMap((chapter, chapterIndex) =>
-    chapter.lessons.map((lesson, lessonIndex) => ({
-      lesson,
-      chapter,
-      label: `${chapterIndex + 1}단원 · ${chapter.title}`,
-      first: lessonIndex === 0,
-    })),
-  )
-  .map((entry, index) => ({ ...entry, number: index + 1 }));
+function place(list: Chapter[], startNumber: number): Placed[] {
+  return list
+    .flatMap((chapter, chapterIndex) =>
+      chapter.lessons.map((lesson, lessonIndex) => ({
+        lesson,
+        chapter,
+        label: `${chapter.label ?? `${chapterIndex + 1}단원`} · ${chapter.title}`,
+        first: lessonIndex === 0,
+      })),
+    )
+    .map((entry, index) => ({ ...entry, number: startNumber + index }));
+}
+
+const placed = place(chapters, 1);
+const placedAppendix = place([appendix], placed.length + 1);
 
 /** 단원 하나를 왼쪽(글) + 오른쪽(3D 장면) 두 페이지로 만든다. */
 function lessonPages({ lesson, chapter, label, number }: Placed): [PageSpec, PageSpec] {
@@ -140,6 +156,11 @@ export const book: BookDefinition = {
               ...(first ? { group: label } : {}),
             })),
             { title: '한눈에 정리', pageId: 'summary', group: '마무리' },
+            ...placedAppendix.map(({ lesson, label, first }) => ({
+              title: lesson.title,
+              pageId: `${lesson.id}-text`,
+              ...(first ? { group: label } : {}),
+            })),
           ],
         },
       ],
@@ -176,6 +197,7 @@ export const book: BookDefinition = {
         { type: 'lines', count: 16 },
       ],
     },
+    ...placedAppendix.flatMap(lessonPages),
     {
       id: 'back-cover',
       style: 'cover-back',

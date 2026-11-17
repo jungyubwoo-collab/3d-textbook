@@ -37,6 +37,8 @@ describe('the sample book', () => {
       'potential-energy',
       'kinetic-energy',
       'pendulum',
+      'lab-physics',
+      'lab-chemistry',
     ]);
     for (const id of lessonIds) {
       const { left, right } = pagesOfSpread(book.pages, spreadOfPage(book.pages, `${id}-text`));
@@ -44,6 +46,20 @@ describe('the sample book', () => {
       expect(right?.id).toBe(`${id}-scene`);
       expect(right?.scene).toBeDefined();
     }
+  });
+
+  it('ends with the labs: a sketch that stands up as a 3D room, with a link to the asset hub', () => {
+    const text = book.pages.find((entry) => entry.id === 'lab-physics-text');
+    const scene = book.pages.find((entry) => entry.id === 'lab-physics-scene');
+    const link = text?.blocks.find((block) => block.type === 'link');
+    expect(link?.type === 'link' && link.href).toMatch(/^https:\/\/assethub\./);
+    expect(
+      text?.blocks.some((block) => block.type === 'paragraph' && block.text.includes('370여 종')),
+    ).toBe(true);
+    const figure = scene?.blocks.find((block) => block.type === 'figure');
+    expect(figure?.type === 'figure' && figure.action).toBe('3D로 둘러보기');
+    expect(figure?.type === 'figure' && figure.images).toEqual(['/labs/physics-sketch.webp']);
+    expect(book.pages.at(-2)?.id).toBe('lab-chemistry-scene');
   });
 
   it('asks one prediction question per lesson', () => {
@@ -59,6 +75,7 @@ describe('the sample book', () => {
     expect(eyebrow('momentum-text')).toBe('1단원 · 힘과 운동');
     expect(eyebrow('free-fall-text')).toBe('2단원 · 중력');
     expect(eyebrow('pendulum-text')).toBe('3단원 · 일과 에너지');
+    expect(eyebrow('lab-physics-text')).toBe('부록 · 나의 실험실');
 
     const toc = book.pages.flatMap((entry) => entry.blocks).find((block) => block.type === 'toc');
     const entries = toc?.type === 'toc' ? toc.entries : [];
@@ -72,19 +89,22 @@ describe('the sample book', () => {
       '7',
       '8',
       '한눈에 정리',
+      '나의 물리 실험실',
+      '나의 화학 실험실',
     ]);
     expect(entries.flatMap((entry) => (entry.group ? [entry.group] : []))).toEqual([
       '1단원 · 힘과 운동',
       '2단원 · 중력',
       '3단원 · 일과 에너지',
       '마무리',
+      '부록 · 나의 실험실',
     ]);
 
     const captions = book.pages
       .filter((entry) => entry.scene)
       .map((entry) => entry.blocks.find((block) => block.type === 'caption'))
       .map((block) => (block?.type === 'caption' ? block.text.split('.')[0] : undefined));
-    expect(captions).toEqual(Array.from({ length: 8 }, (_, index) => `그림 ${index + 1}`));
+    expect(captions).toEqual(Array.from({ length: 10 }, (_, index) => `그림 ${index + 1}`));
   });
 
   it('plays the unit music on lesson spreads and the theme everywhere else', () => {
@@ -99,6 +119,7 @@ describe('the sample book', () => {
     expect(music('pendulum-text')).toBe('energy');
     expect(music('momentum-text')).toBe('momentum');
     expect(music('summary')).toBe('theme');
+    expect(music('lab-physics-text')).toBe('theme');
     expect(musicOfSpread(book, spreadCount(book.pages) - 1)).toBe('theme');
   });
 });

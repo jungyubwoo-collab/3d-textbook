@@ -149,6 +149,7 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
               at(region.rect),
             ),
           ];
+        case 'href':
         case 'stamp':
           return [];
       }
@@ -192,6 +193,16 @@ function PageOverlay({ page, side, y }: { page: PageSpec; side: PageSide; y: num
                 y={y}
                 disabled={experiment}
                 onSelect={() => void enterExperiment(book)}
+              />
+            );
+          case 'href':
+            return (
+              <HitArea
+                key={index}
+                rect={region.rect}
+                side={side}
+                y={y}
+                onSelect={() => window.open(region.href, '_blank', 'noopener,noreferrer')}
               />
             );
           case 'answer':

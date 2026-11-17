@@ -6,14 +6,36 @@ import { spreadOfPage } from './structure.ts';
 
 const freeFall = spreadOfPage(book.pages, 'free-fall-text');
 
+/** 부록의 실험실은 예측 문항 없이 바로 둘러본다. */
+const isLab = (id: string) => id.startsWith('lab-');
+
 describe('experimentOfSpread', () => {
-  it('finds the 3D experiment, its 2D figure and the prediction question on every lesson spread', () => {
-    const lessons = book.pages.flatMap((page) => (page.scene ? [page.lessonId] : []));
-    for (const id of lessons) {
+  const sceneLessons = book.pages.flatMap((page) =>
+    page.scene && page.lessonId ? [page.lessonId] : [],
+  );
+  it('finds the 3D experiment and its 2D figure on every lesson spread', () => {
+    for (const id of sceneLessons) {
       const experiment = experimentOfSpread(book, spreadOfPage(book.pages, `${id}-text`));
       expect(experiment?.lessonId).toBe(id);
-      expect(experiment?.questionId).toBeDefined();
       expect(experiment?.page.blocks.some((block) => block.type === 'figure')).toBe(true);
+    }
+  });
+
+  it('asks a prediction before every experiment, and names the button "3D로 실험하기"', () => {
+    for (const id of sceneLessons.filter((lesson) => !isLab(lesson))) {
+      const experiment = experimentOfSpread(book, spreadOfPage(book.pages, `${id}-text`));
+      expect(experiment?.questionId).toBeDefined();
+      expect(experiment?.label).toBe('3D로 실험하기');
+    }
+  });
+
+  it('lets the labs open without a prediction, with the button "3D로 둘러보기"', () => {
+    const labs = sceneLessons.filter(isLab);
+    expect(labs).toEqual(['lab-physics', 'lab-chemistry']);
+    for (const id of labs) {
+      const experiment = experimentOfSpread(book, spreadOfPage(book.pages, `${id}-text`));
+      expect(experiment?.questionId).toBeUndefined();
+      expect(experiment?.label).toBe('3D로 둘러보기');
     }
   });
 
@@ -44,6 +66,12 @@ describe('enterExperiment', () => {
 
   it('opens the experiment once a prediction is chosen', () => {
     bookStore.getState().choose(answerKey('free-fall', 'vacuum-drop'), 'together');
+    expect(enterExperiment(book)).toBe(true);
+    expect(bookStore.getState().experiment).toBe(true);
+  });
+
+  it('opens a lab right away: there is no prediction to make', () => {
+    bookStore.setState({ spread: spreadOfPage(book.pages, 'lab-physics-text') });
     expect(enterExperiment(book)).toBe(true);
     expect(bookStore.getState().experiment).toBe(true);
   });

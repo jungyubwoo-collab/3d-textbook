@@ -1,4 +1,4 @@
-import { COLORS } from './constants.ts';
+import { COLORS, EXPERIMENT_LABEL } from './constants.ts';
 import { hashSeed, mulberry32 } from '../lib/random.ts';
 import { FONT_FAMILY } from './fonts.ts';
 import type { DrawItem, PageLayout, Rect, Region } from './typeset.ts';
@@ -81,14 +81,15 @@ function paintRegion(
     case 'link':
       return;
     case 'figure':
-      drawFigureHint(ctx, region.rect);
+      drawFigureHint(ctx, region.rect, region.action ?? EXPERIMENT_LABEL);
+      return;
+    case 'href':
       return;
   }
 }
 
 /** 그림 칸 오른쪽 아래의 안내 딱지: 그림을 누르면 3D 실험이 펼쳐진다. */
-function drawFigureHint(ctx: CanvasRenderingContext2D, rect: Rect): void {
-  const label = '3D로 실험하기';
+function drawFigureHint(ctx: CanvasRenderingContext2D, rect: Rect, label: string): void {
   ctx.save();
   ctx.font = `700 24px ${FONT_FAMILY}`;
   const width = ctx.measureText(label).width + 74;

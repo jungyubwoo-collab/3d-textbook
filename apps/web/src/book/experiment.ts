@@ -1,4 +1,5 @@
 import { answerKey, bookStore } from '../state/bookStore.ts';
+import { EXPERIMENT_LABEL } from './constants.ts';
 import { pagesOfSpread } from './structure.ts';
 import type { BookDefinition, PageSpec } from './types.ts';
 
@@ -7,6 +8,8 @@ export interface SpreadExperiment {
   page: PageSpec;
   lessonId: string;
   questionId: string | undefined;
+  /** 3D로 펼치는 단추의 글자(그림 블록의 action. 기본은 '3D로 실험하기') */
+  label: string;
 }
 
 export function experimentOfSpread(book: BookDefinition, spread: number): SpreadExperiment | null {
@@ -15,10 +18,12 @@ export function experimentOfSpread(book: BookDefinition, spread: number): Spread
   const question = [left, right]
     .flatMap((page) => page?.blocks ?? [])
     .find((block) => block.type === 'question');
+  const figure = right.blocks.find((block) => block.type === 'figure');
   return {
     page: right,
     lessonId: right.lessonId ?? right.id,
     questionId: question?.type === 'question' ? question.question.id : undefined,
+    label: (figure?.type === 'figure' ? figure.action : undefined) ?? EXPERIMENT_LABEL,
   };
 }
 

@@ -17,10 +17,14 @@ import { CameraRig } from './CameraRig.tsx';
 import { Desk } from './Desk.tsx';
 import { DeskProps } from './DeskProps.tsx';
 import { StageLights, Vignette } from './Stage.tsx';
-import { collectText, loadFonts } from './fonts.ts';
+import { preloadImages } from '../figure/images.ts';
+import { collectFigureImages, collectText, loadFonts } from './fonts.ts';
 
-/** 페이지를 그리기 전에 글꼴을 받는다(한 번만). */
-const fontsReady = loadFonts(collectText(book.pages));
+/** 페이지를 그리기 전에 글꼴과 그림 이미지를 받는다(한 번만). */
+const fontsReady = Promise.all([
+  loadFonts(collectText(book.pages)),
+  preloadImages(collectFigureImages(book.pages)),
+]);
 
 function WhenFontsReady({ children }: { children: ReactNode }) {
   use(fontsReady);

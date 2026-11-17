@@ -67,8 +67,10 @@ export type Region =
     }
   | { kind: 'stamp'; questionId: string; x: number; y: number; radius: number }
   | { kind: 'link'; pageId: string; rect: Rect }
-  /** 2D 그림 칸. 누르면 3D 실험으로 펼친다. */
-  | { kind: 'figure'; rect: Rect };
+  /** 2D 그림 칸. 누르면 3D 실험으로 펼친다. action은 안내 딱지에 쓰는 글자 */
+  | { kind: 'figure'; rect: Rect; action?: string }
+  /** 책 밖으로 나가는 링크 */
+  | { kind: 'href'; href: string; rect: Rect };
 
 export interface PageLayout {
   items: DrawItem[];
@@ -476,9 +478,30 @@ function layoutPaper(page: PageSpec, options: LayoutOptions): PageLayout {
         if (block.type === 'figure') {
           const rect = { x: left, y: top, w: right - left, h: bottom - top };
           items.push({ kind: 'figure', rect, draw: block.draw });
-          regions.push({ kind: 'figure', rect });
+          regions.push({ kind: 'figure', rect, ...(block.action ? { action: block.action } : {}) });
         }
         y = bottom + 20;
+        break;
+      }
+      case 'link': {
+        // 밑줄 친 글자와 밖으로 나가는 화살표(↗)
+        const linkFont = font(700, 25);
+        const textWidth = measure(block.text, linkFont);
+        const center = y + 22;
+        text(block.text, left, center, linkFont, COLORS.accent);
+        const stroke = (x1: number, y1: number, x2: number, y2: number, lineWidth: number) =>
+          items.push({ kind: 'line', x1, y1, x2, y2, color: COLORS.accent, lineWidth });
+        stroke(left, center + 17, left + textWidth, center + 17, 2);
+        const ax = left + textWidth + 14;
+        stroke(ax, center + 7, ax + 14, center - 7, 3);
+        stroke(ax + 3, center - 7, ax + 14, center - 7, 3);
+        stroke(ax + 14, center - 7, ax + 14, center + 4, 3);
+        regions.push({
+          kind: 'href',
+          href: block.href,
+          rect: { x: left - 10, y, w: textWidth + 54, h: 46 },
+        });
+        y += 46 + 14;
         break;
       }
       case 'spacer':

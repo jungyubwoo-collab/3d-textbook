@@ -93,6 +93,39 @@ describe('layoutPage', () => {
     expect(regions).toEqual([expect.objectContaining({ kind: 'link', pageId: 'lever-text' })]);
   });
 
+  it('lays out an outside link as underlined text with a clickable region', () => {
+    const layout = layoutPage(
+      {
+        id: 'p',
+        blocks: [
+          { type: 'link', text: '에셋 허브에서 모두 보기', href: 'https://example.com/hub' },
+        ],
+      },
+      options,
+    );
+    const region = layout.regions.find((entry) => entry.kind === 'href');
+    expect(region).toMatchObject({ kind: 'href', href: 'https://example.com/hub' });
+    const text = layout.items.find((item) => item.kind === 'text');
+    expect(text).toMatchObject({ text: '에셋 허브에서 모두 보기' });
+    // 밑줄 하나와 화살표 세 획
+    expect(layout.items.filter((item) => item.kind === 'line')).toHaveLength(4);
+  });
+
+  it('passes the action name of a figure to its region', () => {
+    const layout = layoutPage(
+      {
+        id: 'p',
+        blocks: [
+          { type: 'figure', draw: drawNothing, text: '', alt: '스케치', action: '3D로 둘러보기' },
+        ],
+      },
+      { ...options, side: 'right' },
+    );
+    expect(layout.regions.find((entry) => entry.kind === 'figure')).toMatchObject({
+      action: '3D로 둘러보기',
+    });
+  });
+
   it('lays out a formula table with one rule under each row', () => {
     const { items } = layoutPage(
       {

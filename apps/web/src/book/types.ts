@@ -68,7 +68,13 @@ export type PageBlock =
       /** 화면 낭독기가 읽는 그림 설명 */
       alt: string;
       height?: number;
+      /** 그림에 쓰는 이미지 파일 주소. 책을 그리기 전에 미리 받아 둔다(figure/images.ts). */
+      images?: string[];
+      /** 그림을 눌렀을 때 하는 일의 이름(안내 딱지와 단추 글자). 기본은 '3D로 실험하기' */
+      action?: string;
     }
+  /** 책 밖으로 나가는 링크. 누르면 새 창에서 열린다. */
+  | { type: 'link'; text: string; href: string }
   | { type: 'spacer'; size: number };
 
 export type PageStyle = 'paper' | 'endpaper' | 'cover-front' | 'cover-back';
@@ -109,6 +115,8 @@ export interface Lesson {
 /** 대단원: 같은 주제의 단원 묶음. 책에는 "1단원 · 힘과 운동"처럼 번호와 함께 찍힌다. */
 export interface Chapter {
   title: string;
+  /** 번호 대신 쓰는 이름(예: '부록'). 없으면 "N단원" */
+  label?: string;
   /** 이 대단원의 배경음악 이름(단원이 따로 정하지 않으면 쓴다) */
   music?: string;
   /** 이 대단원의 실험 무대 분위기 색(단원이 따로 정하지 않으면 쓴다) */

@@ -29,7 +29,9 @@ function blockText(block: PageBlock): string {
     case 'table':
       return block.rows.flat().join(' ');
     case 'figure':
-      return `${block.text} ${block.alt}`;
+      return `${block.text} ${block.alt} ${block.action ?? ''}`;
+    case 'link':
+      return block.text;
     case 'lines':
     case 'grid':
     case 'spacer':
@@ -42,6 +44,17 @@ export function collectText(pages: PageSpec[]): string {
   const fixed =
     '0123456789①②③④⑤–예측해 보세요정답과 해설덮개를 눌러 들춰 확인하세요참 잘했어요수평!쪽3D로 실험하기';
   return fixed + pages.flatMap((page) => page.blocks.map(blockText)).join(' ');
+}
+
+/** 그림 블록이 쓰는 이미지 주소를 모두 모은다(책을 그리기 전에 미리 받기 위해). */
+export function collectFigureImages(pages: PageSpec[]): string[] {
+  return [
+    ...new Set(
+      pages.flatMap((page) =>
+        page.blocks.flatMap((block) => (block.type === 'figure' ? (block.images ?? []) : [])),
+      ),
+    ),
+  ];
 }
 
 /**

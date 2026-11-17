@@ -39,6 +39,9 @@ export const DRAG_COMMIT = 0.32;
 /** 페이지가 펼쳐진 뒤 팝업 장면이 다 일어서 색이 칠해지기까지 걸리는 시간(초) */
 export const REVEAL_DURATION = reducedMotion ? 0.35 : 2.4;
 
+/** 그림을 3D로 펼치는 단추와 안내 딱지의 기본 글자 */
+export const EXPERIMENT_LABEL = '3D로 실험하기';
+
 /** 페이지 텍스처 해상도(px) */
 export const TEXTURE_WIDTH = 1024;
 export const TEXTURE_HEIGHT = Math.round((TEXTURE_WIDTH * PAGE_HEIGHT) / PAGE_WIDTH);
