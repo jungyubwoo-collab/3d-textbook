@@ -18,7 +18,7 @@ import {
   cubeSpace,
   fitModel,
   parseRoom,
-  slotSpace,
+  placementOf,
   type RoomUnit,
   type SlotSpace,
 } from './room.ts';
@@ -176,11 +176,7 @@ function PlacedModel({
 }) {
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
-  const place = slotSpace(slot);
-  const space = useMemo(
-    () => (model.size === undefined ? place : cubeSpace(model.size)),
-    [model.size, place],
-  );
+  const { space, turn } = useMemo(() => placementOf(model, slot), [model, slot]);
   return (
     <PopUp at={at} mode="grow" span={0.16} position={[position.x, position.y + FLOOR, position.z]}>
       <group
@@ -199,7 +195,7 @@ function PlacedModel({
             <ModelBody
               model={model}
               space={space}
-              turn={model.turn ?? place.turn}
+              turn={turn}
               environment={environment}
               marked={selected}
             />

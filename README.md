@@ -30,11 +30,23 @@
 
 ### 부록: 나의 실험실
 
-책 맨 끝에는 **나의 물리 실험실**과 **나의 화학 실험실**이 있습니다. 오른쪽 페이지에 인쇄된 선 스케치를 누르면("3D로 둘러보기") 바닥과 벽, 실험대와 선반이 구석부터 차례로 일어서 3D 공간이 되고, 화면을 끌어 둘러볼 수 있습니다.
+책 맨 끝에는 **나의 물리 실험실**과 **나의 화학 실험실**이 있습니다. 오른쪽 페이지에 인쇄된 선 스케치를 누르면("3D로 둘러보기") 바닥과 벽, 실험대와 선반이 구석부터 차례로 일어서고, 선으로만 그려져 있던 실험 기구가 제 색을 입고 자리에 놓입니다. 화면을 끌어 둘러볼 수 있고, 모델을 누르거나 "이전 모델"·"다음 모델" 단추를 누르면 앞의 받침대에서 크게 돌려 볼 수 있습니다.
 
-- 두 공간은 [Higgsfield](https://higgsfield.ai) 3D Jutsu(호스팅된 Blender)에서 만들었습니다. 공간 GLB와, 같은 구도로 뽑은 선 스케치를 `apps/web/public/labs/`에 싣고, 책에서는 잉크 재질로 다시 칠해 다른 실험과 같은 그림체로 보여 줍니다.
-- 실험대와 선반에는 사내 3D 에셋 저장소(에셋 허브, 370여 종)에서 골라 온 주요 모델을 놓습니다. 허브에 접속하지 못해도 볼 수 있게 GLB를 책에 함께 싣습니다: 파일을 `apps/web/public/models/hub/<id>.glb`에 넣고 `apps/web/src/content/labs/models.ts`의 목록에 이름과 실험실을 적으면, 방 GLB에 표시해 둔 자리(`SLOT_…`)에 놓이고 고른 모델은 앞의 받침대에서 크게 돌려 볼 수 있습니다.
-- 왼쪽 페이지에는 에셋 허브로 가는 링크가 있습니다(로그인이 필요합니다).
+- 두 공간은 [Higgsfield](https://higgsfield.ai) 3D Jutsu(호스팅된 Blender)에서 만들었습니다. 공간 GLB를 `apps/web/public/labs/`에 싣고, 책에서는 잉크 재질로 다시 칠해 다른 실험과 같은 그림체로 보여 줍니다.
+- 실험대와 선반에는 사내 3D 에셋 저장소(에셋 허브, 370여 종)에서 골라 온 주요 모델을 놓습니다. 물리 18종(역학 수레, 시간기록계, 복합 도르래, 빗면, 용수철저울, 오실로스코프, 밴더그래프 발전기 …)과 화학 14종(다니엘 전지, 레몬 전지, 지시약 시험관, 분자·결정 모형, 호프만 전해 장치, 산소통 …)입니다. 허브에 접속하지 못해도 볼 수 있게 GLB를 책에 함께 싣습니다(`apps/web/public/models/hub/<id>.glb`, 목록은 `apps/web/src/content/labs/models.ts`).
+- 스케치는 같은 공간과 모델을, 공간 GLB에 들어 있는 카메라(`CAM_main`) 시점에서 선으로 뽑은 그림입니다(`apps/web/public/labs/<실험실>-sketch.webp`).
+- 왼쪽 페이지에는 자리별 모델 이름과 에셋 허브로 가는 링크가 있습니다(허브는 로그인이 필요합니다).
+
+모델을 더하거나 바꾸려면:
+
+1. 원본 GLB를 웹용으로 줄여 넣습니다(텍스처는 1024 이하 WebP, 메시는 meshopt 압축. 1 MB 안팎인 원본이 250 KB쯤 됩니다).
+
+   ```bash
+   npx @gltf-transform/cli optimize 원본.glb apps/web/public/models/hub/<id>.glb --texture-compress webp --texture-size 1024 --simplify false
+   ```
+
+2. `models.ts`의 `hubModels`에 한 줄을 적습니다(이름, 허브에서의 이름, 놓을 자리 `SLOT_…`). 크기는 자리가 내어 주는 공간에 맞춰 정해집니다(`room.ts`의 `slotSpace`).
+3. 스케치를 다시 뽑습니다. 개발 서버를 띄우고 `http://localhost:5173/lab-sketch.html?lab=physics`(또는 `chemistry`)를 열어 "WebP 받기"로 받은 파일을 `apps/web/public/labs/`에 넣습니다.
 
 ## 기술 스택
 
@@ -110,6 +122,7 @@ apps/
     public/audio/          ElevenLabs로 만든 배경음악(music/)과 효과음(sfx/)
     public/labs/           Higgsfield 3D Jutsu로 만든 실험실 공간(GLB)과 선 스케치
     public/models/hub/     에셋 허브에서 골라 온 주요 3D 모델(GLB)
+    lab-sketch.html        실험실 스케치를 뽑는 개발 도구(src/tools/, 책에는 실리지 않는다)
     src/ui/                3D 화면 위의 HTML(조작 막대, 알림, 탐구 과제판, 모은 도장 수)
   api/                     학습 기록 API
     prisma/                schema.prisma, 마이그레이션

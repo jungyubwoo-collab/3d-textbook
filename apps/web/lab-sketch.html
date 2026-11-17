@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>실험실 스케치 뽑기 · 3D 교과서</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f1ece1;
+        color: #25221e;
+        font:
+          16px/1.6 Pretendard,
+          system-ui,
+          sans-serif;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+      }
+      nav a,
+      #download {
+        margin-right: 12px;
+        color: #c4522f;
+        font-weight: 700;
+      }
+      #sketch canvas {
+        display: block;
+        max-width: 100%;
+        margin-top: 12px;
+        background: #fff;
+        border: 1px solid #d8d0c0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>실험실 스케치 뽑기</h1>
+    <nav>
+      <a href="?lab=physics">나의 물리 실험실</a>
+      <a href="?lab=chemistry">나의 화학 실험실</a>
+    </nav>
+    <p id="status">준비하는 중…</p>
+    <a id="download" hidden>WebP 받기</a>
+    <div id="sketch"></div>
+    <script type="module" src="/src/tools/labSketch.ts"></script>
+  </body>
+</html>

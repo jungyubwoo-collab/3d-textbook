@@ -178,6 +178,21 @@ export function slotSpace(slot: string): SlotSpace {
 export const cubeSpace = (size: number): Omit<SlotSpace, 'turn'> => ({ w: size, h: size, d: size });
 
 /**
+ * 모델을 자리에 놓을 때의 공간과 방향. 모델이 크기나 방향을 정해 두었으면 그것을 쓰고,
+ * 아니면 자리에 맞춘다. 책의 장면과 스케치 도구가 함께 쓴다.
+ */
+export function placementOf(
+  model: { size?: number; turn?: number },
+  slot: string,
+): { space: Omit<SlotSpace, 'turn'>; turn: number } {
+  const place = slotSpace(slot);
+  return {
+    space: model.size === undefined ? place : cubeSpace(model.size),
+    turn: model.turn ?? place.turn,
+  };
+}
+
+/**
  * 모델을 공간에 꼭 맞게 줄이거나 키운다(turn만큼 돌려 놓았을 때의 가로·깊이로 잰다).
  * 가로·깊이 가운데를 원점에, 바닥을 높이 0에 둔다.
  * 돌려주는 값은 배율, 옮길 거리(배율을 곱한 뒤), 맞춘 뒤의 높이.

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { assignSlots, cubeSpace, fitModel, parseRoom, slotSpace } from './room.ts';
+import { assignSlots, cubeSpace, fitModel, parseRoom, placementOf, slotSpace } from './room.ts';
 
 function mesh(name: string, color: string, size = 1, opacity = 1): THREE.Mesh {
   const result = new THREE.Mesh(
@@ -114,6 +114,23 @@ describe('slotSpace', () => {
 
   it('falls back to a small cube for unknown places', () => {
     expect(slotSpace('SLOT_window_1')).toMatchObject({ w: 0.5, h: 0.5, d: 0.5, turn: 0 });
+  });
+});
+
+describe('placementOf', () => {
+  it('uses the room and direction of the place by default', () => {
+    expect(placementOf({}, 'SLOT_left_2')).toEqual({
+      space: slotSpace('SLOT_left_2'),
+      turn: 90,
+    });
+  });
+
+  it('lets a model choose its own size and direction', () => {
+    expect(placementOf({ size: 0.3, turn: 45 }, 'SLOT_left_2')).toEqual({
+      space: cubeSpace(0.3),
+      turn: 45,
+    });
+    expect(placementOf({ turn: 0 }, 'SLOT_left_2').turn).toBe(0);
   });
 });
 
