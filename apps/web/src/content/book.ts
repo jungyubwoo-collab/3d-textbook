@@ -6,6 +6,7 @@ import { newtonLawsLesson } from './lessons/newton-laws/lesson.ts';
 import { orbitLesson } from './lessons/orbit/lesson.ts';
 import { pendulumLesson } from './lessons/pendulum/lesson.ts';
 import { potentialEnergyLesson } from './lessons/potential-energy/lesson.ts';
+import { pulleyLesson } from './lessons/pulley/lesson.ts';
 
 /**
  * 책에 싣는 대단원과 단원(순서대로). 단원을 넣거나 순서를 바꾸면
@@ -28,7 +29,7 @@ const chapters: Chapter[] = [
     title: '일과 에너지',
     music: 'energy',
     mood: '#ffd27a',
-    lessons: [potentialEnergyLesson, kineticEnergyLesson, pendulumLesson],
+    lessons: [pulleyLesson, potentialEnergyLesson, kineticEnergyLesson, pendulumLesson],
   },
 ];
 
@@ -156,6 +157,7 @@ export const book: BookDefinition = {
             ['운동량', 'p = m v, 충돌 전 합 = 충돌 후 합'],
             ['자유 낙하', 'v = g t,   h = ½ g t²'],
             ['원 궤도', '지표 근처에서 약 7.9 km/s'],
+            ['일의 원리', 'W = F s, 도구를 써도 일은 그대로'],
             ['위치 에너지', 'Ep = m g h'],
             ['운동 에너지', 'Ek = ½ m v²'],
             ['역학적 에너지', 'Ep + Ek = 일정'],

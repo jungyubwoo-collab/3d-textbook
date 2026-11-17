@@ -33,6 +33,7 @@ describe('the sample book', () => {
       'momentum',
       'free-fall',
       'orbit',
+      'pulley',
       'potential-energy',
       'kinetic-energy',
       'pendulum',
@@ -49,8 +50,8 @@ describe('the sample book', () => {
     const questions = book.pages.flatMap((entry) =>
       entry.blocks.flatMap((block) => (block.type === 'question' ? [entry.lessonId] : [])),
     );
-    expect(questions).toHaveLength(7);
-    expect(new Set(questions).size).toBe(7);
+    expect(questions).toHaveLength(8);
+    expect(new Set(questions).size).toBe(8);
   });
 
   it('numbers the chapters, the contents and the figures in book order', () => {
@@ -69,6 +70,7 @@ describe('the sample book', () => {
       '5',
       '6',
       '7',
+      '8',
       '한눈에 정리',
     ]);
     expect(entries.flatMap((entry) => (entry.group ? [entry.group] : []))).toEqual([
@@ -82,15 +84,7 @@ describe('the sample book', () => {
       .filter((entry) => entry.scene)
       .map((entry) => entry.blocks.find((block) => block.type === 'caption'))
       .map((block) => (block?.type === 'caption' ? block.text.split('.')[0] : undefined));
-    expect(captions).toEqual([
-      '그림 1',
-      '그림 2',
-      '그림 3',
-      '그림 4',
-      '그림 5',
-      '그림 6',
-      '그림 7',
-    ]);
+    expect(captions).toEqual(Array.from({ length: 8 }, (_, index) => `그림 ${index + 1}`));
   });
 
   it('plays the unit music on lesson spreads and the theme everywhere else', () => {
@@ -99,6 +93,7 @@ describe('the sample book', () => {
     expect(music('newton-laws-text')).toBe('momentum');
     expect(music('free-fall-text')).toBe('gravity');
     expect(music('orbit-text')).toBe('gravity');
+    expect(music('pulley-text')).toBe('energy');
     expect(music('potential-energy-text')).toBe('energy');
     expect(music('kinetic-energy-text')).toBe('energy');
     expect(music('pendulum-text')).toBe('energy');
